@@ -57,17 +57,23 @@
     <div class="portao-card">
       <form id="form-acesso">
         <div class="field">
-          <label for="codigo-acesso">Código de acesso</label>
-          <input type="password" id="codigo-acesso" placeholder="Digite o código">
+          <label for="email-acesso">E-mail</label>
+          <input type="email" id="email-acesso" placeholder="seu@email.com" autocomplete="username" required>
         </div>
-        <p id="acesso-erro" hidden style="color:var(--rose);">Código incorreto.</p>
+        <div class="field">
+          <label for="senha-acesso">Senha</label>
+          <input type="password" id="senha-acesso" placeholder="Sua senha" autocomplete="current-password" required>
+        </div>
+        <p id="acesso-erro" hidden style="color:var(--rose);">E-mail ou senha incorretos.</p>
         <button type="submit" class="btn btn-primary" style="width:100%;">Entrar</button>
-        <p>Esta é apenas uma trava simples, não um login seguro. Não use para dados sensíveis.</p>
       </form>
     </div>
   </div>
 
   <div id="painel-gestao" class="wrap gestao-wrap" hidden>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+      <button type="button" id="btn-sair" class="btn">Sair</button>
+    </div>
     <section class="gestao-secao">
       <h2>Pedidos pendentes</h2>
       <div class="pedido-grid" id="lista-pendentes"></div>
