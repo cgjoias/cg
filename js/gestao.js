@@ -1,12 +1,11 @@
 // ============================================================
-// ATENÇÃO: isto NÃO é um sistema de login.
-// É apenas uma trava simples no navegador para evitar que a
-// página seja aberta por acaso. Qualquer pessoa que veja o
-// código-fonte pode descobrir o código. A proteção de verdade
-// dos dados precisa vir das políticas de RLS no Supabase.
-// Veja o README.md antes de usar em produção.
+// ACESSO AO PAINEL
+// O login de verdade é feito pelo Supabase Auth (email + senha).
+// Quem protege os dados dos clientes é a política de RLS lá no
+// banco (supabase/schema.sql), não este arquivo — então mesmo que
+// alguém veja este código, não consegue ler os pedidos sem logar.
+// Crie seu usuário em: Supabase > Authentication > Users > Add user.
 // ============================================================
-const CODIGO_ACESSO = "cg2026"; // troque este código
 
 function formatarPreco(valor) {
   return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -80,22 +79,53 @@ async function tratarAcao(evento) {
   }
 }
 
-function iniciarGestao() {
+function mostrarPainel(painel, portao) {
+  portao.hidden = true;
+  painel.hidden = false;
+  carregarPedidos();
+}
+
+function mostrarPortao(painel, portao) {
+  painel.hidden = true;
+  portao.hidden = false;
+}
+
+async function iniciarGestao() {
   const painel = document.getElementById("painel-gestao");
   const portao = document.getElementById("portao-acesso");
   if (!painel) return;
 
+  // Se já existe uma sessão válida (ex.: usuário deu F5), entra direto.
+  const { data: { session } } = await db.auth.getSession();
+  if (session) mostrarPainel(painel, portao);
+
   const formAcesso = document.getElementById("form-acesso");
-  formAcesso.addEventListener("submit", (evento) => {
+  formAcesso.addEventListener("submit", async (evento) => {
     evento.preventDefault();
-    const valor = document.getElementById("codigo-acesso").value.trim();
-    if (valor === CODIGO_ACESSO) {
-      portao.hidden = true;
-      painel.hidden = false;
-      carregarPedidos();
-    } else {
-      document.getElementById("acesso-erro").hidden = false;
+    const erroBox = document.getElementById("acesso-erro");
+    erroBox.hidden = true;
+
+    const email = document.getElementById("email-acesso").value.trim();
+    const senha = document.getElementById("senha-acesso").value;
+    const botao = formAcesso.querySelector('button[type="submit"]');
+    botao.disabled = true;
+    botao.textContent = "Entrando...";
+
+    const { error } = await db.auth.signInWithPassword({ email, password: senha });
+
+    botao.disabled = false;
+    botao.textContent = "Entrar";
+
+    if (error) {
+      erroBox.hidden = false;
+      return;
     }
+    mostrarPainel(painel, portao);
+  });
+
+  document.getElementById("btn-sair").addEventListener("click", async () => {
+    await db.auth.signOut();
+    mostrarPortao(painel, portao);
   });
 
   painel.addEventListener("click", tratarAcao);
