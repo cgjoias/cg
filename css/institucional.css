@@ -6,7 +6,7 @@
   text-align: center;
 }
 .institucional-header h1 { color: var(--bone); margin-bottom: 0.3em; }
-.institucional-header p { color: rgba(253,238,243,0.8); max-width: 560px; margin: 0 auto; }
+.institucional-header p { color: var(--bone); max-width: 560px; margin: 0 auto; }
 
 .institucional-wrap {
   max-width: 780px;

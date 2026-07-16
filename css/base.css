@@ -343,7 +343,7 @@ footer.site-footer .foot-col-titulo {
 }
 footer.site-footer .brand { margin-bottom: var(--space-1); }
 footer.site-footer .foot-col p,
-footer.site-footer .foot-col a { color: rgba(253,238,243,0.75); font-size: 0.92rem; }
+footer.site-footer .foot-col a { color: var(--bone); font-size: 0.92rem; }
 footer.site-footer .foot-col a:hover { color: var(--gold-light); }
 footer.site-footer .foot-col ul { list-style: none; margin: 0; padding: 0; }
 footer.site-footer .foot-col li { margin-bottom: 0.55em; }
@@ -396,7 +396,7 @@ footer.site-footer .foot-bottom {
   padding-top: var(--space-2);
   text-align: center;
   font-size: 0.8rem;
-  color: rgba(253,238,243,0.5);
+  color: var(--bone);
 }
 .icon-insta { width: 20px; height: 20px; }
 

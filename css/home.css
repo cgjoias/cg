@@ -12,7 +12,7 @@
   align-items: center;
 }
 .hero-copy h1 { color: var(--bone); margin: var(--space-2) 0 var(--space-3); }
-.hero-copy p.lead { color: rgba(253,238,243,0.8); max-width: 46ch; font-size: 1.05rem; }
+.hero-copy p.lead { color: var(--bone); max-width: 46ch; font-size: 1.05rem; }
 .hero-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }
 
 .hero-stack {
@@ -114,4 +114,4 @@
   padding: var(--space-5) 0;
 }
 .cta-final h2 { color: var(--bone); }
-.cta-final p { color: rgba(253,238,243,0.75); max-width: 50ch; margin-inline: auto; }
+.cta-final p { color: var(--bone); max-width: 50ch; margin-inline: auto; }
