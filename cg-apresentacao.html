@@ -65,10 +65,11 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     margin-bottom: 1.1rem;
   }
-  .medalhao img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .medalhao img,
+  .medalhao svg {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
   }
 
   .eyebrow {
@@ -179,7 +180,12 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="medalhao"><img src="https://i.ibb.co/x86Vbsw6/capa-cg-4k-1.png" alt="Logo CG Acessórios"></div>
+    <div class="medalhao">
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 16 L24 8 L34 16 L24 40 Z" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M14 16 L34 16 M19 16 L24 40 M29 16 L24 40 M14 16 L19 16 L24 8 L29 16 L34 16" fill="none" stroke="var(--gold)" stroke-width="1.1" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <span class="eyebrow">Semijoias banhadas a ouro</span>
     <h1>CG <span>Acessórios</span></h1>
     <p class="tagline">Peças que contam a sua história. Escolha pelo catálogo e finalize o pedido direto pelo WhatsApp — sem cadastro.</p>
