@@ -1,0 +1,76 @@
+/* Trava de scroll da página (usada pelos modais). Corrige o bug em que
+   overflow:hidden sozinho no body deixava o fundo rolando/travando no
+   celular: aqui a página é fixada no lugar e a posição é restaurada
+   ao fechar. */
+body.scroll-travado {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Visualizador de imagem em tela cheia com zoom ao clicar/tocar */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(10, 8, 10, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3, 1rem);
+}
+.zoom-overlay[hidden] { display: none; }
+
+.zoom-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: transform 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.zoom-img.zoom-ativo {
+  cursor: zoom-out;
+  transform: scale(2.2);
+}
+
+.zoom-fechar,
+.zoom-nav {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s ease;
+}
+.zoom-fechar:hover,
+.zoom-nav:hover { background: var(--velvet-3); }
+
+.zoom-fechar {
+  top: var(--space-2, 0.75rem);
+  right: var(--space-2, 0.75rem);
+  width: 42px;
+  height: 42px;
+  font-size: 1.1rem;
+}
+.zoom-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.zoom-prev { left: var(--space-2, 0.75rem); }
+.zoom-next { right: var(--space-2, 0.75rem); }
+@media (max-width: 640px) {
+  .zoom-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+}

@@ -1,0 +1,102 @@
+/* ---------- Cabeçalho simples das páginas institucionais ---------- */
+.institucional-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+}
+.institucional-header h1 { color: var(--bone); margin-bottom: 0.3em; }
+.institucional-header p { color: rgba(253,238,243,0.8); max-width: 560px; margin: 0 auto; }
+
+.institucional-wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-5);
+}
+
+.institucional-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+.institucional-voltar:hover { color: var(--gold); }
+
+.institucional-corpo h2 {
+  font-size: 1.15rem;
+  margin-top: var(--space-4);
+  margin-bottom: 0.5em;
+  color: var(--gold-dim);
+}
+.institucional-corpo h2:first-child { margin-top: 0; }
+.institucional-corpo p {
+  margin-bottom: 0.9em;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.institucional-corpo ul,
+.institucional-corpo ol {
+  margin: 0 0 0.9em 1.2em;
+  line-height: 1.65;
+}
+.institucional-corpo li { margin-bottom: 0.35em; }
+.institucional-corpo strong { color: var(--ink); }
+.institucional-corpo .atualizado {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- Perguntas e respostas (FAQ) ---------- */
+.faq-item {
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-s);
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+}
+.faq-pergunta {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: none;
+  padding: 0.9em 1.1em;
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+}
+.faq-pergunta .sinal { color: var(--gold); font-size: 1.1rem; flex-shrink: 0; }
+.faq-resposta {
+  padding: 0 1.1em 1em;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+.faq-item:not(.aberto) .faq-resposta { display: none; }
+.faq-item.aberto .faq-pergunta .sinal { transform: rotate(45deg); }
+
+/* ---------- Cartões de contato (Fale Conosco) ---------- */
+.contato-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.contato-card {
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-s);
+  padding: var(--space-3);
+  text-align: center;
+  color: var(--ink);
+}
+.contato-card .icone { font-size: 1.6rem; margin-bottom: 0.4em; display: block; }
+.contato-card strong { display: block; margin-bottom: 0.2em; }
+.contato-card a { color: var(--gold-dim); font-size: 0.9rem; }
+.contato-card a:hover { color: var(--gold); }

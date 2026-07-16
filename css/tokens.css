@@ -1,0 +1,70 @@
+/*
+  TOKENS — Identidade visual
+  Conceito: joalheria em tons de rosa e branco, sem dourado. Molduras
+  circulares (medalhão) como elemento assinatura, usadas em categorias,
+  produtos e retratos de peças ao longo do site.
+
+  Suporta modo claro (padrão) e modo escuro via atributo
+  [data-theme="dark"] na tag <html>, alternado pelo botão no menu
+  (ver js/tema.js). --velvet, --velvet-2, --velvet-3, --bone e --gold
+  ficam praticamente iguais nos dois modos (usados como texto claro
+  sobre fundo rosa, no cabeçalho/rodapé/hero) — só as superfícies de
+  conteúdo (--page-bg, --surface, --bone-2, --ink, --muted) trocam.
+*/
+
+:root {
+  /* Cor — marca (fixas nos dois modos: cabeçalho, rodapé, hero) */
+  --velvet: #b23d68;       /* superfície primária — rosa mais claro que o vinho antigo */
+  --velvet-2: #c04e77;     /* superfície secundária (cards sobre a superfície principal) */
+  --velvet-3: #d06590;     /* bordas/hover sobre a superfície principal */
+  --bone: #fdeef3;         /* texto/ícone claro sobre a superfície principal */
+  --gold: #7a2142;         /* acento (sem dourado) — links, ícones, bordas */
+  --gold-light: #f6dbe4;   /* acento claro — hover, destaque sobre a superfície principal */
+  --gold-shine: #ffffff;   /* brilho branco — usado só no medalhão, não usar como texto */
+  --medallion-gold: #c9a15c;       /* dourado — reservado só pro anel do medalhão/foto de produto */
+  --medallion-gold-light: #ecd7a3; /* dourado claro — reservado só pro anel do medalhão/foto de produto */
+  --rose: #e07a9a;         /* acento secundário — status, avisos suaves */
+
+  /* Cor — conteúdo (alternam entre modo claro/escuro) */
+  --ink: #3a1420;          /* texto principal sobre superfície clara */
+  --muted: #7a7566;        /* texto secundário (descrições, legendas) */
+  --gold-dim: #6b1c39;     /* acento escuro — texto sobre superfície clara */
+  --page-bg: #fff8fa;      /* fundo geral da página — rosa bem fraco, quase branco */
+  --surface: #ffffff;      /* fundo de cartões, campos e botões — branco */
+  --bone-2: #fdeaf1;       /* superfície secundária — rosa fraco (faixas, hover) */
+  --rose-light: #fbe4ec;
+
+  /* Tipografia */
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body: "Jost", "Segoe UI", sans-serif;
+
+  /* Escala */
+  --step-eyebrow: 0.78rem;
+  --step-body: 1rem;
+  --step-h3: 1.5rem;
+  --step-h2: 2.1rem;
+  --step-h1: clamp(2.6rem, 5vw, 4.4rem);
+
+  /* Espaçamento */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.75rem;
+  --space-4: 2.75rem;
+  --space-5: 4.5rem;
+
+  /* Forma */
+  --radius-s: 6px;
+  --radius-m: 14px;
+  --line: 1px solid rgba(122, 33, 66, 0.25);
+}
+
+/* ---------- Modo escuro ---------- */
+[data-theme="dark"] {
+  --ink: #f7ebef;
+  --muted: #cfa9b6;
+  --gold-dim: #eaadc3;
+  --page-bg: #24101a;
+  --surface: #331722;
+  --bone-2: #40202e;
+  --rose-light: #4a2130;
+}

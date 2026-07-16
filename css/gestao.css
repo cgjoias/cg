@@ -1,0 +1,53 @@
+.gestao-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+}
+.gestao-header h1 { color: var(--bone); }
+.gestao-header .eyebrow { justify-content: center; }
+
+.portao {
+  max-width: 380px;
+  margin: var(--space-5) auto;
+  padding: 0 var(--space-3);
+  text-align: center;
+}
+.portao-card {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+}
+.portao-card p { color: var(--muted); font-size: 0.88rem; }
+
+.gestao-wrap { padding: var(--space-4) 0 var(--space-5); }
+.gestao-secao { margin-bottom: var(--space-4); }
+.gestao-secao h2 { display: flex; align-items: center; gap: 0.5em; }
+
+.pedido-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-2);
+}
+
+.pedido-box {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+}
+.pedido-box .pedido-details p { margin: 0 0 0.35em; font-size: 0.9rem; }
+.pedido-box h3 { font-size: 1.1rem; margin-bottom: 0.4em; }
+.pedido-actions { display: flex; gap: var(--space-1); margin-top: var(--space-2); }
+.pedido-actions .btn { flex: 1; padding: 0.6em 1em; font-size: 0.85rem; }
+
+.status-tag {
+  display: inline-block;
+  padding: 0.15em 0.7em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.status-pendente { background: var(--rose-light); color: var(--rose); }
+.status-confirmado { background: #dfeee0; color: #2f6b3a; }

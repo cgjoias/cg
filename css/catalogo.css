@@ -1,0 +1,209 @@
+.catalogo-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+}
+.catalogo-header h1 { color: var(--bone); }
+.catalogo-header .eyebrow { justify-content: center; }
+
+.tabs-categoria {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+}
+.tabs-categoria button {
+  border: 1px solid var(--bone-2);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.55em 1.3em;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tabs-categoria button:hover { border-color: var(--gold); }
+.tabs-categoria button.active { background: var(--velvet); color: var(--bone); border-color: var(--velvet); }
+
+.grid-produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-5);
+}
+
+.produto-card {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.produto-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.produto-medalhao { width: 130px; margin-bottom: var(--space-2); }
+.produto-card h3 { font-size: 1.1rem; margin-bottom: 0.1em; }
+.produto-material { color: var(--gold-dim); font-size: 0.8rem; letter-spacing: 0.03em; margin-bottom: 0.3em; }
+.produto-preco { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.4em; }
+.produto-codigo { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); flex-grow: 1; }
+.produto-card .btn { width: 100%; position: relative; z-index: 1; }
+
+#catalogo-vazio { text-align: center; padding: var(--space-4) 0; color: var(--muted); }
+
+/* ---------- Medalhão clicável (abre foto ampliada) ---------- */
+.produto-medalhao {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+.produto-medalhao:hover { transform: scale(1.04); }
+.produto-medalhao:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+/* ---------- Modal de detalhes (fotos + especificações + tamanhos) ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(18, 21, 15, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+.lightbox[hidden] { display: none; }
+
+.detalhe-painel {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--medallion-gold);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  max-width: 900px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+@media (max-width: 760px) {
+  .detalhe-painel { grid-template-columns: 1fr; max-height: 92vh; }
+}
+
+.detalhe-foto {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bone-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-m) 0 0 var(--radius-m);
+}
+@media (max-width: 760px) {
+  .detalhe-foto { border-radius: var(--radius-m) var(--radius-m) 0 0; }
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: 60vh;
+  border-radius: var(--radius-s);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.detalhe-info {
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  color: var(--ink);
+}
+.detalhe-info h3 { font-size: 1.35rem; margin-bottom: 0.2em; }
+.detalhe-codigo { color: var(--muted); font-size: 0.86rem; margin-bottom: 0.4em; }
+.detalhe-preco { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0.2em; }
+.detalhe-material { color: var(--gold-dim); font-size: 0.85rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); }
+
+.detalhe-specs {
+  border-top: 1px solid var(--bone-2);
+  border-bottom: 1px solid var(--bone-2);
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+}
+.detalhe-spec-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.88rem;
+  padding: 0.2em 0;
+}
+.detalhe-spec-linha span:first-child { color: var(--muted); }
+.detalhe-spec-linha span:last-child { text-align: right; font-weight: 600; }
+
+.detalhe-tamanhos { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-grupo { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-rotulo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3em;
+}
+.detalhe-tamanhos-lista { display: flex; flex-wrap: wrap; gap: 0.4em; }
+.tamanho-chip {
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.25em 0.8em;
+  font-size: 0.82rem;
+}
+
+.detalhe-descricao { color: var(--muted); font-size: 0.9rem; margin-bottom: var(--space-3); }
+.detalhe-info .btn { width: 100%; }
+
+.lightbox-fechar {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+.lightbox-fechar:hover { background: var(--velvet-3); }
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+.lightbox-nav:hover { background: var(--velvet-3); }
+.lightbox-prev { left: var(--space-2); }
+.lightbox-next { right: var(--space-2); }
+@media (max-width: 640px) {
+  .lightbox-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+}
