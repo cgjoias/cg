@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <script>(function(){try{var t=localStorage.getItem("cg-tema");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fazer Pedido de Semijoias | CG Acessórios — Belém, Ananindeua e Castanhal</title>
+  <meta name="description" content="Faça seu pedido de semijoias banhadas a ouro direto pelo WhatsApp, sem cadastro. Atendemos Belém, Ananindeua e Castanhal.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.cgacessorios.com.br/pedido.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/marca/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/marca/favicon-512.png">
+  <link rel="apple-touch-icon" href="assets/img/marca/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/tokens.css?v=20260715b">
+  <link rel="stylesheet" href="css/base.css?v=20260715b">
+  <link rel="stylesheet" href="css/pedido.css?v=20260715b">
+  <link rel="stylesheet" href="css/zoom-imagem.css?v=20260715b">
+  <style>
+    /* Correção do bug de foto fixa/sobreposta no mobile, embutida direto
+       aqui pra não depender de cache de nenhum arquivo .css externo. */
+    @media (max-width: 860px) {
+      .pedido-media {
+        position: static !important;
+        top: auto !important;
+        grid-row: auto !important;
+        grid-column: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a href="index.html" class="brand"><img src="assets/img/marca/logo.jpg" alt="CG Acessórios" class="brand-logo"> CG Acessórios</a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="catalogo.html">Catálogo</a></li>
+        <li><a href="pedido.html" class="active">Fazer pedido</a></li>
+        <li class="nav-dropdown">
+          <button type="button" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Mais <span class="nav-caret" aria-hidden="true">&#9662;</span></button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="faq.html">Perguntas frequentes</a></li>
+            <li><a href="garantia.html">Garantia</a></li>
+            <li><a href="cuidados.html">Cuidado com a peça</a></li>
+            <li><a href="guia-medidas.html">Guia de medidas</a></li>
+            <li><a href="trocas-devolucoes.html">Trocas e devoluções</a></li>
+            <li class="nav-dropdown-sep" role="separator"></li>
+            <li><a href="quem-somos.html">Quem somos</a></li>
+            <li><a href="termos.html">Termos de uso</a></li>
+            <li><a href="privacidade.html">Política de privacidade</a></li>
+            <li class="nav-dropdown-sep" role="separator"></li>
+            <li><a href="gestao.html">Gestão</a></li>
+          </ul>
+        </li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar modo claro/escuro"><span class="icon-sol">☀️</span><span class="icon-lua">🌙</span></button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu">☰</button>
+    </div>
+  </nav>
+
+  <header class="pedido-header">
+    <div class="wrap">
+      <span class="eyebrow on-dark">Passo único</span>
+      <h1>Fazer pedido</h1>
+      <p style="color:rgba(245,240,228,0.75)">Sem cadastro. Só o essencial para combinarmos os detalhes.</p>
+    </div>
+  </header>
+
+  <div class="pedido-wrap">
+    <div class="pedido-card">
+      <div class="pedido-media" id="pedido-media" hidden>
+        <div class="pedido-foto-principal">
+          <button type="button" class="pedido-foto-nav pedido-foto-prev" id="pedido-foto-prev" aria-label="Foto anterior" hidden>‹</button>
+          <img id="pedido-foto-img" src="" alt="">
+          <button type="button" class="pedido-foto-nav pedido-foto-next" id="pedido-foto-next" aria-label="Próxima foto" hidden>›</button>
+        </div>
+        <div class="pedido-foto-miniaturas" id="pedido-foto-miniaturas"></div>
+        <div class="pedido-media-info">
+          <h2 id="pedido-media-nome"></h2>
+          <p class="pedido-media-codigo" id="pedido-media-codigo"></p>
+          <p class="pedido-media-preco" id="pedido-media-preco"></p>
+        </div>
+      </div>
+
+      <div id="pedido-erro" class="alert-erro" hidden></div>
+
+      <form id="form-pedido">
+        <div class="field">
+          <label for="produto">Peça desejada</label>
+          <select id="produto" name="produto" required></select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome" required>
+          </div>
+          <div class="field">
+            <label for="whatsapp">WhatsApp</label>
+            <input type="tel" id="whatsapp" name="whatsapp" placeholder="(51) 90000-0000" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="endereco">Endereço para entrega (opcional)</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Deixe em branco para combinar pelo WhatsApp">
+        </div>
+
+        <div class="field">
+          <label for="detalhes" id="detalhes-label">Tamanho / cor / variação</label>
+          <div class="chips-variacao" id="chips-variacao" hidden></div>
+          <input type="text" id="detalhes" name="detalhes" placeholder="Ex: aro 18, tom dourado">
+          <p class="field-hint" id="detalhes-ajuda" hidden>Marque uma ou mais opções.</p>
+        </div>
+
+        <div class="field">
+          <label for="observacoes">Observações</label>
+          <textarea id="observacoes" name="observacoes" placeholder="Alguma informação extra sobre o pedido"></textarea>
+        </div>
+
+        <div class="pedido-actions-row">
+          <button type="button" class="btn btn-line" onclick="window.location.href='catalogo.html'">Voltar ao catálogo</button>
+          <button type="submit" class="btn btn-primary">Finalizar pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="foot-col">
+        <p class="brand" style="color:var(--bone); font-size:1.2rem;"><img src="assets/img/marca/logo.jpg" alt="CG Acessórios" class="brand-logo"> CG Acessórios</p>
+        <p>Semijoias banhadas a ouro</p>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">Dúvidas</p>
+        <ul>
+          <li><a href="faq.html">Perguntas frequentes</a></li>
+          <li><a href="garantia.html">Garantia</a></li>
+          <li><a href="cuidados.html">Cuidado com a peça</a></li>
+          <li><a href="guia-medidas.html">Guia de medidas</a></li>
+          <li><a href="trocas-devolucoes.html">Trocas e devoluções</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">A CG Acessórios</p>
+        <ul>
+          <li><a href="quem-somos.html">Quem somos</a></li>
+          <li><a href="termos.html">Termos de uso</a></li>
+          <li><a href="privacidade.html">Política de privacidade</a></li>
+          <li><a href="catalogo.html">Catálogo</a></li>
+          <li><a href="pedido.html">Fazer pedido</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">Fale com a gente</p>
+        <ul class="foot-contato" id="foot-contato"></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">&copy; 2026 CG Acessórios.</div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js?v=20260715b"></script>
+  <script src="js/tema.js?v=20260715b"></script>
+  <script src="js/nav-dropdown.js?v=20260715b"></script>
+  <script src="js/social.js?v=20260715b"></script>
+  <script src="js/supabaseClient.js?v=20260715b"></script>
+  <script src="data/produtos.js"></script>
+  <script src="js/zoom-imagem.js?v=20260715b"></script>
+  <script src="js/pedido.js?v=20260715b"></script>
+</body>
+</html>

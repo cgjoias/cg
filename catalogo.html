@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <script>(function(){try{var t=localStorage.getItem("cg-tema");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Semijoias Banhadas a Ouro | Entrega em Belém, Ananindeua e Castanhal</title>
+  <meta name="description" content="Veja o catálogo completo de anéis, colares, brincos e pulseiras banhados a ouro 18k da CG Acessórios. Entrega em Belém do Pará, Ananindeua e Castanhal.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.cgacessorios.com.br/catalogo.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/marca/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/img/marca/favicon-512.png">
+  <link rel="apple-touch-icon" href="assets/img/marca/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/tokens.css?v=20260715b">
+  <link rel="stylesheet" href="css/base.css?v=20260715b">
+  <link rel="stylesheet" href="css/catalogo.css?v=20260715b">
+  <link rel="stylesheet" href="css/zoom-imagem.css?v=20260715b">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a href="index.html" class="brand"><img src="assets/img/marca/logo.jpg" alt="CG Acessórios" class="brand-logo"> CG Acessórios</a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="catalogo.html" class="active">Catálogo</a></li>
+        <li><a href="pedido.html">Fazer pedido</a></li>
+        <li class="nav-dropdown">
+          <button type="button" class="nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">Mais <span class="nav-caret" aria-hidden="true">&#9662;</span></button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="faq.html">Perguntas frequentes</a></li>
+            <li><a href="garantia.html">Garantia</a></li>
+            <li><a href="cuidados.html">Cuidado com a peça</a></li>
+            <li><a href="guia-medidas.html">Guia de medidas</a></li>
+            <li><a href="trocas-devolucoes.html">Trocas e devoluções</a></li>
+            <li class="nav-dropdown-sep" role="separator"></li>
+            <li><a href="quem-somos.html">Quem somos</a></li>
+            <li><a href="termos.html">Termos de uso</a></li>
+            <li><a href="privacidade.html">Política de privacidade</a></li>
+            <li class="nav-dropdown-sep" role="separator"></li>
+            <li><a href="gestao.html">Gestão</a></li>
+          </ul>
+        </li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar modo claro/escuro"><span class="icon-sol">☀️</span><span class="icon-lua">🌙</span></button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu">☰</button>
+    </div>
+  </nav>
+
+  <header class="catalogo-header">
+    <div class="wrap">
+      <span class="eyebrow on-dark">Vitrine</span>
+      <h1>Catálogo</h1>
+      <p style="color:rgba(253,238,243,0.75)">Escolha a peça e finalize o pedido em seguida.</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="tabs-categoria" id="tabs-categoria">
+      <button data-categoria="todos">Todos</button>
+      <button data-categoria="aneis">Anéis</button>
+      <button data-categoria="colares">Colares</button>
+      <button data-categoria="brincos">Brincos</button>
+      <button data-categoria="pulseiras">Pulseiras</button>
+    </div>
+
+    <div class="grid-produtos" id="grid-produtos"></div>
+    <p id="catalogo-vazio" hidden>Nenhuma peça encontrada nesta categoria.</p>
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <div class="detalhe-painel">
+      <button class="lightbox-fechar" id="lightbox-fechar" aria-label="Fechar">✕</button>
+      <div class="detalhe-foto">
+        <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Foto anterior" hidden>‹</button>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="">
+        <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Próxima foto" hidden>›</button>
+      </div>
+      <div class="detalhe-info" id="detalhe-info"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="foot-col">
+        <p class="brand" style="color:var(--bone); font-size:1.2rem;"><img src="assets/img/marca/logo.jpg" alt="CG Acessórios" class="brand-logo"> CG Acessórios</p>
+        <p>Semijoias banhadas a ouro</p>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">Dúvidas</p>
+        <ul>
+          <li><a href="faq.html">Perguntas frequentes</a></li>
+          <li><a href="garantia.html">Garantia</a></li>
+          <li><a href="cuidados.html">Cuidado com a peça</a></li>
+          <li><a href="guia-medidas.html">Guia de medidas</a></li>
+          <li><a href="trocas-devolucoes.html">Trocas e devoluções</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">A CG Acessórios</p>
+        <ul>
+          <li><a href="quem-somos.html">Quem somos</a></li>
+          <li><a href="termos.html">Termos de uso</a></li>
+          <li><a href="privacidade.html">Política de privacidade</a></li>
+          <li><a href="catalogo.html">Catálogo</a></li>
+          <li><a href="pedido.html">Fazer pedido</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <p class="foot-col-titulo">Fale com a gente</p>
+        <ul class="foot-contato" id="foot-contato"></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">&copy; 2026 CG Acessórios.</div>
+  </footer>
+
+  <script src="data/produtos.js"></script>
+  <script src="js/zoom-imagem.js?v=20260715b"></script>
+  <script src="js/catalogo.js?v=20260715b"></script>
+  <script src="js/config.js?v=20260715b"></script>
+  <script src="js/tema.js?v=20260715b"></script>
+  <script src="js/nav-dropdown.js?v=20260715b"></script>
+  <script src="js/social.js?v=20260715b"></script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+.pedido-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+}
+.pedido-header h1 { color: var(--bone); }
+.pedido-header .eyebrow { justify-content: center; }
+
+.pedido-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-5);
+}
+
+.pedido-card {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+.pedido-card form { grid-column: 2; min-width: 0; }
+.pedido-card #pedido-erro { grid-column: 2; min-width: 0; }
+@media (max-width: 860px) {
+  .pedido-card { grid-template-columns: minmax(0, 1fr); }
+  .pedido-card form,
+  .pedido-card #pedido-erro { grid-column: 1; }
+}
+
+/* ---------- Painel de fotos da peça escolhida ---------- */
+.pedido-media {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: var(--space-3);
+}
+.pedido-media[hidden] { display: none; }
+
+/* No mobile o layout vira 1 coluna só (foto em cima, formulário embaixo).
+   O "position: sticky" acima é só pro desktop (2 colunas lado a lado); em
+   coluna única ele fazia a foto "grudar" no topo da tela e ficar sobreposta
+   ao formulário enquanto a página rolava. Essa regra precisa vir DEPOIS da
+   regra base acima, senão o cascade do CSS ignora ela no mobile. */
+@media (max-width: 860px) {
+  .pedido-media {
+    position: static;
+    top: auto;
+    grid-row: auto;
+    grid-column: 1;
+  }
+}
+.pedido-foto-principal {
+  position: relative;
+  background: var(--bone-2);
+  border-radius: var(--radius-m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.pedido-foto-principal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.pedido-foto-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.pedido-foto-prev { left: 0.6rem; }
+.pedido-foto-next { right: 0.6rem; }
+.pedido-foto-miniaturas {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+.pedido-foto-miniaturas img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.pedido-foto-miniaturas img:hover { opacity: 1; }
+.pedido-foto-miniaturas img.ativa { border-color: var(--gold); opacity: 1; }
+.pedido-media-info { margin-top: var(--space-2); }
+.pedido-media-info h2 { font-size: 1.25rem; margin-bottom: 0.15em; }
+.pedido-media-codigo { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.2em; }
+.pedido-media-preco { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); }
+
+.pedido-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.alert-erro {
+  background: var(--rose-light);
+  color: var(--rose);
+  border-radius: var(--radius-s);
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 0.9rem;
+}
+
+/* ---------- Chips de tamanho/cor/variação (formulário de pedido) ---------- */
+/* Container externo: só empilha os grupos (Aro feminino / Aro masculino).
+   NÃO é grid — quem vira grid é .chips-variacao-linha, para não espremer
+   o grupo inteiro dentro de uma coluna de 64px. */
+.chips-variacao {
+  display: block;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+.chips-variacao[hidden] { display: none; }
+
+.chips-variacao-grupo {
+  margin-top: 0.9rem;
+  width: 100%;
+}
+.chips-variacao-grupo:first-child { margin-top: 0; }
+.chips-variacao-rotulo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.4rem;
+}
+
+/* Linha real de botões (números do aro, ou opções simples).
+   auto-fill deixa quantos couberem por linha, e o mínimo baixo garante
+   várias colunas mesmo no celular. */
+.chips-variacao-linha {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+@media (max-width: 480px) {
+  .chips-variacao-linha { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 0.4rem; }
+}
+
+.chip {
+  position: relative;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
+}
+.chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.chip span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 0.2em;
+  border: 1px solid var(--bone-2);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--surface);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  text-align: center;
+}
+.chip input:checked + span {
+  background: var(--velvet);
+  color: var(--bone);
+  border-color: var(--velvet);
+}
+.chip input:hover + span { border-color: var(--gold); }
+.chip input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }

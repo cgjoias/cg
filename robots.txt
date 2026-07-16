@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /gestao.html
+Disallow: /resumo.html
+
+Sitemap: https://www.cgacessorios.com.br/sitemap.xml
