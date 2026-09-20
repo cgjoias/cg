@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="assets/img/marca/apple-touch-icon.png">
   <link rel="stylesheet" href="css/tokens.css?v=20260920d">
   <link rel="stylesheet" href="css/base.css?v=20260920i">
-  <link rel="stylesheet" href="css/gestao.css?v=20260920v">
+  <link rel="stylesheet" href="css/gestao.css?v=20260920x">
 </head>
 <body class="pagina-gestao">
 
@@ -129,15 +129,38 @@
     </div>
 
     <div id="aba-produtos" hidden>
-      <div class="prod-barra" id="prod-barra">
+      <header class="ped-hero">
+        <div class="ped-hero-txt">
+          <span class="ped-eyebrow">Gestão · CG Acessórios</span>
+          <h2 class="ped-titulo">Produtos</h2>
+          <p id="prod-hero-sub" class="ped-hero-sub">Carregando peças…</p>
+        </div>
+        <div class="ped-hero-acoes">
+          <button type="button" id="prod-novo" class="btn">＋ Novo produto</button>
+        </div>
+      </header>
+
+      <div class="ped-kpis" id="prod-kpis"></div>
+
+      <div class="prod-barra ped-barra" id="prod-barra">
         <input type="search" id="prod-busca" class="prod-busca" placeholder="Buscar peça por nome ou código...">
+        <div class="ped-filtros" id="prod-filtros" role="group" aria-label="Filtrar produtos">
+          <button type="button" class="ativo" data-filtro="todos">Todos</button>
+          <button type="button" data-filtro="site">No site</button>
+          <button type="button" data-filtro="aguardando">Aguardando</button>
+          <button type="button" data-filtro="atencao">Atenção</button>
+        </div>
+      </div>
+
+      <div class="prod-ferramentas">
+        <span class="prod-ferr-tit">Ferramentas</span>
         <div class="prod-acoes">
-          <button type="button" id="prod-novo" class="btn btn-primary">＋ Novo produto</button>
           <button type="button" id="prod-baixar" class="btn btn-line">Baixar planilha</button>
           <button type="button" id="prod-importar" class="btn btn-line">Importar planilha</button>
           <input type="file" id="prod-arquivo" accept=".xlsx,.xls" hidden>
         </div>
       </div>
+
       <p id="prod-msg" class="prod-msg" hidden></p>
       <div id="prod-vazio" class="prod-vazio" hidden>
         <p>Ainda não há produtos no painel. Para começar, copie os produtos que já estão no site (basta fazer isso uma vez):</p>
@@ -195,6 +218,6 @@
   <script src="js/supabaseClient.js?v=20260715b"></script>
   <script src="js/gestao.js?v=20260920v"></script>
   <script src="js/gestao-financeiro.js?v=20260920x"></script>
-  <script src="js/gestao-produtos.js?v=20260920w"></script>
+  <script src="js/gestao-produtos.js?v=20260920x"></script>
 </body>
 </html>
