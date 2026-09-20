@@ -509,3 +509,43 @@
   .detalhe-painel { scrollbar-width: none; }
   .detalhe-painel::-webkit-scrollbar { display: none; }
 }
+
+/* ============================================================
+   SÓ CSS (funciona mesmo sem atualizar catalogo.html / catalogo.js)
+   Celular, painel de detalhes aberto:
+   - "Fechar" (texto) vira o ❌ redondo
+   - o botão ☀️/🌙 do header do site é trazido para cima do painel,
+     ao lado do ❌ (ele já tem o clique de trocar o tema)
+   ============================================================ */
+@media (max-width: 760px) {
+  /* ❌ no lugar do texto "Fechar" (só quando o HTML/JS ainda é o antigo) */
+  .lightbox-fechar:not(:has(.emo)) { font-size: 0; width: 40px; min-width: 40px; padding: 0; }
+  .lightbox-fechar:not(:has(.emo)) > span { display: none; }
+  .lightbox-fechar:not(:has(.emo))::before {
+    content: "❌";
+    font-size: 1rem;
+    line-height: 1;
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  }
+
+  /* ☀️/🌙: enquanto o painel está aberto (e não existe o botão novo dentro dele),
+     esconde o resto do header e deixa só o botão de tema, por cima do painel */
+  body:not(:has(.lightbox-tema)):has(.lightbox:not([hidden])) .nav {
+    z-index: 101;
+    visibility: hidden;
+  }
+  body:not(:has(.lightbox-tema)):has(.lightbox:not([hidden])) .nav .theme-toggle {
+    visibility: visible;
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 60px;            /* ao lado do ❌ (12px + 40px + 8px) */
+    margin: 0;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #000;
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 2px 6px rgba(58, 20, 32, 0.18);
+    z-index: 210;
+  }
+}
