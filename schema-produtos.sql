@@ -29,10 +29,14 @@ create table if not exists public.produtos (
   tamanhos_feminino jsonb,
   tamanhos_masculino jsonb,
   variacoes jsonb,
+  precos jsonb,
   imagens jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Valores por tipo de venda (Par / Unidade / Trio). Bancos criados antes desta coluna: rode migracao-valores-por-tipo.sql
+alter table public.produtos add column if not exists precos jsonb;
 
 alter table public.produtos enable row level security;
 
