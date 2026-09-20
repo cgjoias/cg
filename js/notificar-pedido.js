@@ -24,6 +24,7 @@
       cliente: pedido.nome || "",
       whatsapp: pedido.whatsapp || "",
       whatsapp_link: `https://wa.me/${numeroWhats(pedido.whatsapp)}`,
+      email_cliente: pedido.email || "não informado",
       endereco: pedido.endereco || "A combinar",
       observacoes: pedido.observacoes || "—",
       qtd_pecas: String(itens.length),

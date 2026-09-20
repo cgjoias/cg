@@ -23,6 +23,7 @@ const ICONES_PED = {
   check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',
   recibo: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
   whats: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  email: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
   pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
   nota: '<path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/>',
 };
@@ -78,12 +79,13 @@ function agruparPedidos(linhas) {
     const chave = `${p.whatsapp}|${p.nome}|${String(p.created_at).slice(0, 19)}`;
     let g = mapa.get(chave);
     if (!g) {
-      g = { chave, nome: p.nome, whatsapp: p.whatsapp, endereco: p.endereco, observacoes: p.observacoes, created_at: p.created_at, itens: [], ids: [] };
+      g = { chave, nome: p.nome, whatsapp: p.whatsapp, email: p.email, endereco: p.endereco, observacoes: p.observacoes, created_at: p.created_at, itens: [], ids: [] };
       mapa.set(chave, g);
     }
     g.itens.push(p);
     g.ids.push(p.id);
     if (!g.observacoes && p.observacoes) g.observacoes = p.observacoes;
+    if (!g.email && p.email) g.email = p.email;
   });
   return [...mapa.values()].map((g) => {
     g.total = g.itens.reduce((soma, i) => soma + Number(i.preco || 0), 0);
@@ -121,6 +123,7 @@ function cardPedido(g) {
     <div class="ped-total"><span>${g.itens.length > 1 ? `Total · ${g.itens.length} peças` : "Total"}</span><strong>${formatarPreco(g.total)}</strong></div>
 
     <div class="ped-info">
+      ${g.email ? `<p>${svgPed("email", 16)}<span><a href="mailto:${escPed(g.email)}">${escPed(g.email)}</a></span></p>` : ""}
       <p>${svgPed("pin", 16)}<span>${escPed(g.endereco || "Endereço a combinar")}</span></p>
       ${g.observacoes ? `<p>${svgPed("nota", 16)}<span>${escPed(g.observacoes)}</span></p>` : ""}
     </div>
@@ -158,7 +161,7 @@ function desenharPedidos() {
   ].join("");
 
   const q = normPed(buscaPedidos);
-  const passa = (g) => !q || normPed([g.nome, g.whatsapp, g.endereco, ...g.itens.map((i) => i.produto_nome)].join(" ")).includes(q);
+  const passa = (g) => !q || normPed([g.nome, g.whatsapp, g.email, g.endereco, ...g.itens.map((i) => i.produto_nome)].join(" ")).includes(q);
 
   const preencher = (idLista, lista, vazio) => {
     const el = document.getElementById(idLista);
@@ -227,6 +230,7 @@ async function exportarPedidos() {
       Data: new Date(p.created_at).toLocaleString("pt-BR"),
       Cliente: p.nome,
       WhatsApp: p.whatsapp,
+      "E-mail": p.email || "",
       Endereço: p.endereco || "",
       Peça: p.produto_nome,
       Categoria: p.categoria || "",
@@ -236,7 +240,7 @@ async function exportarPedidos() {
       Status: p.status,
     }));
     const ws = XLSX.utils.json_to_sheet(linhas);
-    ws["!cols"] = [18, 24, 16, 30, 32, 12, 10, 30, 30, 12].map((wch) => ({ wch }));
+    ws["!cols"] = [18, 24, 16, 26, 30, 32, 12, 10, 30, 30, 12].map((wch) => ({ wch }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
     XLSX.writeFile(wb, `pedidos-${new Date().toISOString().slice(0, 10)}.xlsx`);

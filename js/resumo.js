@@ -8,6 +8,7 @@ function montarLinhas(pedido) {
     return [
       ["Nome", pedido.nome],
       ["WhatsApp", pedido.whatsapp],
+      ...(pedido.email ? [["E-mail", pedido.email]] : []),
       ["Endereço", pedido.endereco || "A combinar"],
       ...pedido.itens.map((item, i) => [
         `Peça ${i + 1}`,
@@ -20,6 +21,7 @@ function montarLinhas(pedido) {
   return [
     ["Nome", pedido.nome],
     ["WhatsApp", pedido.whatsapp],
+    ...(pedido.email ? [["E-mail", pedido.email]] : []),
     ["Endereço", pedido.endereco || "A combinar"],
     ["Peça", pedido.produto_nome],
     ["Valor", formatarPreco(pedido.preco)],

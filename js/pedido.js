@@ -335,6 +335,7 @@ function iniciarModoSacola(form, erroBox) {
     const comuns = {
       nome: dados.get("nome").trim(),
       whatsapp: dados.get("whatsapp").trim(),
+      ...emailDoForm(dados),
       endereco: (dados.get("endereco") || "").trim() || null,
       observacoes: (dados.get("observacoes") || "").trim() || null,
       status: "Pendente",
@@ -356,12 +357,12 @@ function iniciarModoSacola(form, erroBox) {
       const { error } = await db.from("pedidos").insert(linhas);
       if (error) throw error;
 
-      if (window.notificarPedido) {
-        await window.notificarPedido({
+      try {
+        if (window.notificarPedido) await window.notificarPedido({
           ...comuns,
           itens: linhas.map((l) => ({ nome: l.produto_nome, preco: l.preco, detalhes: l.detalhes })),
         });
-      }
+      } catch (e) { console.warn("Alerta por e-mail falhou (o pedido foi salvo):", e); }
 
       sessionStorage.setItem("ultimoPedido", JSON.stringify({
         ...comuns,
@@ -381,9 +382,44 @@ function iniciarModoSacola(form, erroBox) {
   });
 }
 
+// ---------- WhatsApp com máscara: (11) 9 9999-9999 ----------
+function formatarWhats(valor) {
+  const d = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : "";
+  const ddd = d.slice(0, 2), resto = d.slice(2);
+  if (resto[0] === "9") {
+    // celular: (11) 9 9999-9999
+    let t = `(${ddd}) ${resto[0]}`;
+    if (resto.length > 1) t += ` ${resto.slice(1, 5)}`;
+    if (resto.length > 5) t += `-${resto.slice(5)}`;
+    return t;
+  }
+  // fixo: (11) 3333-3333
+  return `(${ddd}) ${resto.slice(0, 4)}${resto.length > 4 ? "-" + resto.slice(4) : ""}`;
+}
+
+function ligarMascaraWhats() {
+  const campo = document.getElementById("whatsapp");
+  if (!campo) return;
+  const validar = () => {
+    const n = campo.value.replace(/\D/g, "").length;
+    campo.setCustomValidity(n === 10 || n === 11 ? "" : "Informe o DDD e o número. Ex.: (11) 9 9999-9999");
+  };
+  campo.addEventListener("input", () => { campo.value = formatarWhats(campo.value); validar(); });
+  campo.value = formatarWhats(campo.value);
+  validar();
+}
+
+// E-mail é opcional: só entra no pedido se o cliente preencheu.
+function emailDoForm(dados) {
+  const email = String(dados.get("email") || "").trim();
+  return email ? { email } : {};
+}
+
 async function iniciarFormularioPedido() {
   const form = document.getElementById("form-pedido");
   if (!form) return;
+  ligarMascaraWhats();
 
   const selectProduto = document.getElementById("produto");
   const erroBox = document.getElementById("pedido-erro");
@@ -420,6 +456,7 @@ async function iniciarFormularioPedido() {
     const pedido = {
       nome: dados.get("nome").trim(),
       whatsapp: dados.get("whatsapp").trim(),
+      ...emailDoForm(dados),
       endereco: (dados.get("endereco") || "").trim() || null,
       produto_id: produtoEscolhido.id,
       produto_nome: produtoEscolhido.nome,
@@ -438,12 +475,12 @@ async function iniciarFormularioPedido() {
       const { error } = await db.from("pedidos").insert(pedido);
       if (error) throw error;
 
-      if (window.notificarPedido) {
-        await window.notificarPedido({
+      try {
+        if (window.notificarPedido) await window.notificarPedido({
           ...pedido,
           itens: [{ nome: pedido.produto_nome, preco: pedido.preco, detalhes: pedido.detalhes }],
         });
-      }
+      } catch (e) { console.warn("Alerta por e-mail falhou (o pedido foi salvo):", e); }
 
       sessionStorage.setItem("ultimoPedido", JSON.stringify(pedido));
       window.location.href = "resumo.html";
