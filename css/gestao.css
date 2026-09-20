@@ -8,7 +8,7 @@
 .gestao-header .eyebrow { justify-content: center; }
 
 .portao {
-  max-width: 380px;
+  max-width: 520px;
   margin: var(--space-5) auto;
   padding: 0 var(--space-3);
   text-align: center;
