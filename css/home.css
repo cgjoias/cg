@@ -31,6 +31,9 @@
 
 @media (max-width: 860px) {
   .hero .wrap { grid-template-columns: 1fr; }
+  /* Botões centralizados e com a mesma largura no celular */
+  .hero-actions { justify-content: center; gap: var(--space-1); }
+  .hero-actions .btn { flex: 1 1 0; max-width: 190px; min-width: 0; padding-inline: 0.8em; white-space: nowrap; }
   .hero-stack { height: 260px; margin-top: var(--space-3); }
   .hero-stack .m1 { width: 140px; right: 40%; top: 0; }
   .hero-stack .m2 { width: 110px; right: 10%; top: 90px; }

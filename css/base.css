@@ -267,7 +267,7 @@ footer.site-footer .brand-logo { width: 34px; height: 34px; }
   .nav-toggle {
     display: inline-flex;
     background: none;
-    border: 1px solid rgba(58,20,32,0.25);
+    border: 1.5px solid #000; /* borda preta, igual ao botão de tema */
     color: #1a1a1a;
     border-radius: 8px;
     width: 40px;
@@ -279,7 +279,7 @@ footer.site-footer .brand-logo { width: 34px; height: 34px; }
   }
   .nav-toggle.open {
     background: var(--rose);
-    border-color: var(--rose);
+    border-color: #000;
     color: #1a1a1a;
   }
   .nav-dropdown-toggle { width: 100%; justify-content: space-between; padding: 0.4em 0; }
