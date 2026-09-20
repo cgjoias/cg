@@ -34,23 +34,22 @@ function ehPlaceholder(valor) {
 // Tamanhos cadastrados como par ("22/23") viram dois botões separados: "22" e "23".
 // Valores que não são um par numérico (ex.: "Tamanho único (ajustável)") ficam como estão.
 function expandirTamanhos(lista) {
+  // Mantém a numeração exatamente como está no catálogo — "10/11" é uma opção só,
+  // não duas (antes isso virava dois chips separados, "10" e "11").
   const vistos = new Set();
   const resultado = [];
   lista.forEach((t) => {
     const texto = String(t).trim();
-    const partes = /^\d+\s*\/\s*\d+$/.test(texto)
-      ? texto.split("/").map((p) => p.trim())
-      : [texto];
-    partes.forEach((p) => {
-      if (!vistos.has(p)) {
-        vistos.add(p);
-        resultado.push(p);
-      }
-    });
+    if (texto && !vistos.has(texto)) {
+      vistos.add(texto);
+      resultado.push(texto);
+    }
   });
-  // Se todos os itens forem números, ordena crescente (10, 11, 12...).
-  if (resultado.every((p) => /^\d+$/.test(p))) {
-    resultado.sort((a, b) => Number(a) - Number(b));
+  // Ordena crescente quando dá pra comparar numericamente (10, 10/11, 12/13...),
+  // usando o primeiro número de cada opção.
+  const primeiroNumero = (s) => parseInt(String(s).split("/")[0], 10);
+  if (resultado.every((p) => /^\d+(\s*\/\s*\d+)?$/.test(p))) {
+    resultado.sort((a, b) => primeiroNumero(a) - primeiroNumero(b));
   }
   return resultado;
 }
