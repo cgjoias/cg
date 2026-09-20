@@ -446,3 +446,59 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
     justify-content: flex-start;
   }
 }
+
+/* ---------- Celular: barra rosa no topo da tela de pedido ----------
+   Mesma cor e linha preta do header do site, com o título à esquerda e os botões
+   de tema (☀️/🌙) e fechar (❌) dentro dela. Fica fixa; só o formulário rola.
+   Vem no fim do arquivo de propósito, pra vencer as regras anteriores. */
+@media (max-width: 860px) {
+  :root { --topo-h: calc(64px + env(safe-area-inset-top, 0px)); }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--topo-h);
+    background: var(--header-bg);
+    border-bottom: 3px solid #000;
+    z-index: 150;
+  }
+  body::after {
+    content: "Fazer pedido";
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 10px);
+    left: 16px;
+    height: 40px;
+    line-height: 40px;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #1a1a1a;
+    z-index: 160;
+    pointer-events: none;
+  }
+
+  /* botões em linha, dentro da barra: tema e fechar */
+  .pedido-acoes {
+    top: calc(env(safe-area-inset-top, 0px) + 10px);
+    right: 12px;
+    flex-direction: row-reverse; /* fechar na ponta direita, tema à esquerda dele */
+    gap: 0.5rem;
+    z-index: 200;
+  }
+  .pedido-fechar,
+  .pedido-tema {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #000;
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 2px 6px rgba(58, 20, 32, 0.18);
+  }
+  .pedido-fechar:hover,
+  .pedido-tema:hover { background: var(--velvet-2); color: #1a1a1a; }
+
+  /* conteúdo começa logo abaixo da barra */
+  .pedido-card { padding-top: calc(var(--topo-h) + 0.75rem); }
+}
