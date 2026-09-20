@@ -5,7 +5,7 @@
 // logado consegue gravar (regras RLS em schema-produtos.sql).
 // ============================================================
 (function () {
-  const VERSAO_PAINEL = "20260920u";
+  const VERSAO_PAINEL = "20260920x";
   const BUCKET = "produtos";
   const CATEGORIAS = { aliancas: "Alianças", aneis: "Anéis", colares: "Colares", brincos: "Brincos", pulseiras: "Pulseiras" };
   const TEXTOS = ["material", "descricao", "codigo", "cor", "pedra", "largura", "formato", "acabamento", "detalhes"];
@@ -51,6 +51,7 @@
   const ehTipoPreco = (k) => TIPOS_PRECO.some((t) => t.k === k);
 
   let produtos = [];
+  let filtroProd = "todos";
   let ed = null; // estado do editor aberto
 
   const $ = (id) => document.getElementById(id);
@@ -180,23 +181,73 @@
     desenhar();
   }
 
+  const ICONES_PROD = {
+    pecas: '<path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3l3 6 3-6M12 21 9 9m3 12 3-12"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',
+    relogio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    alerta: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17.4v.1"/>',
+    foto: '<rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.2"/>',
+  };
+  const svgProd = (n, t) => `<svg viewBox="0 0 24 24" width="${t || 16}" height="${t || 16}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES_PROD[n]}</svg>`;
+  const kpiProd = (icone, rotulo, valor, dica, cor) =>
+    `<article class="ped-kpi" style="--kpi:${cor}"><span class="ped-kpi-icone">${svgProd(icone, 24)}</span>
+      <div class="ped-kpi-txt"><span class="ped-rotulo">${esc(rotulo)}</span><strong class="ped-valor">${esc(valor)}</strong><span class="ped-dica">${esc(dica)}</span></div></article>`;
+
+  // "Atenção" = peça sem foto ou com preço zerado (vai aparecer assim no site).
+  const precisaAtencao = (p) => !((p.imagens || []).length) || !(Number(p.preco) > 0 || listaPrecos(p.precos).length);
+
   function desenhar() {
     const lista = $("prod-lista");
     const termo = norm($("prod-busca").value);
     $("prod-vazio").hidden = produtos.length > 0;
-    const filtrados = produtos.filter((p) => !termo || norm(p.nome).includes(termo) || norm(p.codigo).includes(termo));
+
+    // indicadores e texto do topo
+    const noSite = produtos.filter((p) => p.ativo).length;
+    const aguardando = produtos.length - noSite;
+    const atencao = produtos.filter(precisaAtencao).length;
+    const kpis = $("prod-kpis");
+    if (kpis) {
+      kpis.innerHTML = [
+        kpiProd("pecas", "Peças cadastradas", String(produtos.length), "no painel", "#E07A9A"),
+        kpiProd("check", "No site", String(noSite), noSite === 1 ? "peça confirmada" : "peças confirmadas", "#5B8A72"),
+        kpiProd("relogio", "Aguardando", String(aguardando), "esperando confirmação", "#B0416B"),
+        kpiProd("alerta", "Atenção", String(atencao), "sem foto ou sem preço", "#D4A017"),
+      ].join("");
+    }
+    const sub = $("prod-hero-sub");
+    if (sub) sub.textContent = produtos.length ? `${produtos.length} peça(s) · ${noSite} no site · ${aguardando} aguardando confirmação` : "Nenhuma peça cadastrada ainda.";
+
+    const filtrados = produtos.filter((p) => {
+      if (termo && !(norm(p.nome).includes(termo) || norm(p.codigo).includes(termo))) return false;
+      if (filtroProd === "site") return p.ativo;
+      if (filtroProd === "aguardando") return !p.ativo;
+      if (filtroProd === "atencao") return precisaAtencao(p);
+      return true;
+    });
+
     lista.innerHTML = filtrados.map((p) => {
       const foto = (p.imagens && p.imagens[0]) || "assets/img/marca/logo.jpg";
+      const precos = listaPrecos(p.precos);
+      const chips = precos.length
+        ? precos.map((o) => `<li><span>${esc(o.rotulo)}</span><strong>${moeda(o.valor)}</strong></li>`).join("")
+        : `<li><span>Preço</span><strong>${moeda(p.preco)}</strong></li>`;
+      const n = (p.imagens || []).length;
       return `<article class="prod-card${p.ativo ? " confirmado" : " oculto"}" data-id="${esc(p.id)}" tabindex="0" role="button">
-        <div class="prod-thumb"><img src="${esc(foto)}" alt="" loading="lazy"></div>
+        <div class="prod-thumb">
+          <img src="${esc(foto)}" alt="" loading="lazy">
+          <span class="prod-selo ${p.ativo ? "ok" : "espera"}">${p.ativo ? "✓ No site" : "Aguardando"}</span>
+        </div>
         <div class="prod-info">
-          <h3>${esc(p.nome)}</h3>
-          <p class="prod-sub">${esc(CATEGORIAS[p.categoria] || p.categoria)} · ${esc(listaPrecos(p.precos).length ? textoPrecos(p.precos) : moeda(p.preco))}</p>
-          <p class="prod-sub">${(p.imagens || []).length} foto(s) · ${p.ativo ? '<span class="status-tag status-confirmado">✓ Confirmado</span>' : '<span class="status-tag status-pendente">Aguardando confirmação</span>'}</p>
-          <button type="button" class="prod-conf" data-conf="${esc(p.id)}">${p.ativo ? "Desfazer confirmação" : "✓ Confirmar"}</button>
+          <span class="prod-cat">${esc(CATEGORIAS[p.categoria] || p.categoria || "—")}${p.codigo ? " · " + esc(p.codigo) : ""}</span>
+          <h3 title="${esc(p.nome)}">${esc(p.nome)}</h3>
+          <ul class="prod-precos">${chips}</ul>
+          <div class="prod-rodape">
+            <span class="prod-fotos-n${n ? "" : " falta"}">${svgProd("foto", 15)} ${n ? n + " foto(s)" : "sem foto"}</span>
+            <button type="button" class="prod-conf" data-conf="${esc(p.id)}">${p.ativo ? "Desfazer confirmação" : "✓ Confirmar"}</button>
+          </div>
         </div>
       </article>`;
-    }).join("") || (produtos.length ? "<p>Nenhuma peça encontrada.</p>" : "");
+    }).join("") || (produtos.length ? '<p class="ped-vazio">Nenhuma peça encontrada.</p>' : "");
     atualizarBotaoConfirmarTudo();
   }
 
@@ -1522,6 +1573,14 @@
     const barraAbas = document.querySelector(".gestao-abas");
     if (barraAbas) barraAbas.addEventListener("click", (e) => { const b = e.target.closest(".gestao-aba"); if (b) trocarAba(b.dataset.aba); });
     $("prod-busca").addEventListener("input", desenhar);
+    const filtros = $("prod-filtros");
+    if (filtros) filtros.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-filtro]");
+      if (!b) return;
+      filtroProd = b.dataset.filtro;
+      filtros.querySelectorAll("button").forEach((x) => x.classList.toggle("ativo", x === b));
+      desenhar();
+    });
     $("prod-novo").addEventListener("click", () => abrirEditor(null));
     $("prod-baixar").addEventListener("click", baixarPlanilha);
     $("prod-importar").addEventListener("click", () => $("prod-arquivo").click());
@@ -1559,7 +1618,8 @@
     selo.className = "field-hint";
     selo.style.margin = "0.25rem 0 0";
     selo.textContent = "Painel de produtos — versão " + VERSAO_PAINEL;
-    $("prod-barra").after(selo);
+    const ferr = document.querySelector(".prod-ferramentas");
+    (ferr || $("prod-barra")).append(selo);
     $("prod-arquivo").addEventListener("change", aoEscolherPlanilha);
     $("prod-importar-site").addEventListener("click", (e) => importarDoSite(e.currentTarget));
     $("prod-lista").addEventListener("click", (e) => {
