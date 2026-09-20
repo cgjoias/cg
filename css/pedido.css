@@ -502,3 +502,14 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
   /* conteúdo começa logo abaixo da barra */
   .pedido-card { padding-top: calc(var(--topo-h) + 0.75rem); }
 }
+
+/* ---------- Celular: "Voltar ao catálogo" e "Finalizar pedido" com a MESMA borda ----------
+   Os dois com 2px, na cor do tema (preta no claro, branca no escuro). */
+@media (max-width: 860px) {
+  .pedido-card .pedido-actions-row .btn,
+  .pedido-card .pedido-actions-row .btn:hover {
+    border-width: 2px;
+    border-style: solid;
+    border-color: var(--pedido-fg);
+  }
+}
