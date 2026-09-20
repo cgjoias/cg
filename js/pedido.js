@@ -1,13 +1,5 @@
 async function carregarProdutos() {
-  try {
-    const resposta = await fetch("data/produtos.json");
-    return await resposta.json();
-  } catch (erro) {
-    // fetch() é bloqueado quando a página é aberta direto do disco (file://).
-    // Nesse caso, usa a cópia embutida em data/produtos.js (carregado no HTML).
-    if (window.PRODUTOS_DATA) return window.PRODUTOS_DATA;
-    throw erro;
-  }
+  return window.carregarProdutosSite();
 }
 
 function preencherSelectProdutos(select, produtos, idPreSelecionado) {

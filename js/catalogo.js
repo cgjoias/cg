@@ -37,17 +37,10 @@ async function iniciarCatalogo() {
 
   let produtos = [];
   try {
-    const resposta = await fetch("data/produtos.json");
-    produtos = await resposta.json();
+    produtos = await window.carregarProdutosSite();
   } catch (erro) {
-    // fetch() é bloqueado quando a página é aberta direto do disco (file://).
-    // Nesse caso, usa a cópia embutida em data/produtos.js (carregado no HTML).
-    if (window.PRODUTOS_DATA) {
-      produtos = window.PRODUTOS_DATA;
-    } else {
-      grid.innerHTML = "<p>Não foi possível carregar o catálogo agora. Tente novamente em instantes.</p>";
-      return;
-    }
+    grid.innerHTML = "<p>Não foi possível carregar o catálogo agora. Tente novamente em instantes.</p>";
+    return;
   }
 
   const params = new URLSearchParams(window.location.search);
