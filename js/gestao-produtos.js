@@ -411,7 +411,7 @@
       if (b.dataset.foto === "dir" && i < f.length - 1) [f[i + 1], f[i]] = [f[i], f[i + 1]];
       desenharFotos();
     }
-    if (b.dataset.imp === "cancelar") { imagensPendentes = null; fecharModal(); }
+    if (b.dataset.imp === "cancelar") { imagensPendentes = null; financeiroPendente = null; fecharModal(); }
   }
 
   // ---------- importar produtos que já estão no site (uma vez) ----------
@@ -710,6 +710,7 @@
 
   let pendente = null;
   let imagensPendentes = null; // { codigo: [Blob, ...] } — fotos achadas dentro do próprio Excel
+  let financeiroPendente = null; // dados de estoque/vendas lidos da planilha (aba Financeiro)
 
   // ---------- Leitura da planilha de Controle de Estoque/Vendas original ----------
   // Aceita, além da planilha baixada pelo botão "Baixar planilha", a planilha de
@@ -884,7 +885,7 @@
       linhas.push(COLUNAS.map((c) => porChave[c.k]));
       chaves.push(p.linha);
     });
-    return { linhas, mapa, chaves, posicoes, casados, qtdJaExistiam: casados.size, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+    return { linhas, mapa, chaves, posicoes, casados, catalogo, qtdJaExistiam: casados.size, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
   }
 
   // Peça que já existe, não mudou em nada, mas ganhou foto nova no Excel: conta como
@@ -1035,6 +1036,7 @@
     evento.target.value = "";
     if (!arquivo) return;
     imagensPendentes = null;
+    financeiroPendente = null;
     try {
       const buffer = await arquivo.arrayBuffer();
       const X = await carregarXLSX();
@@ -1066,6 +1068,10 @@
         // repetidas de importações antigas) entra na lista pra ser removido.
         const idsNaPlanilha = new Set([...original.casados.values()].map((x) => x.id));
         pendente.remover = produtos.filter((x) => !idsNaPlanilha.has(x.id));
+        // Estoque, entradas e vendas da mesma planilha alimentam a aba Financeiro.
+        if (window.GestaoFinanceiro) {
+          try { financeiroPendente = window.GestaoFinanceiro.lerPlanilha(X, wb, original.catalogo); } catch (e) { financeiroPendente = null; }
+        }
         mostrarPrevia(pendente);
         const ja = original.qtdJaExistiam || 0;
         aviso(`Planilha de controle de estoque reconhecida${avisoFotos}. O painel vai ficar igual à planilha: ${original.linhas.length - 1} peça(s) — ${ja} já existem (atualizadas, sem duplicar), ${pendente.novos.length} nova(s) e ${pendente.remover.length} a remover. Preço e visibilidade das que já existem ficam como estão; as novas entram como Anéis, preço 0 e aguardando confirmação (ocultas do site até você confirmar).`, falhaFotos ? "erro" : "ok");
@@ -1093,6 +1099,7 @@
     abrirModal(`
       <h2>Prévia da importação</h2>
       <p>${r.alterados.length} para alterar · ${r.novos.length} novo(s) · ${r.iguais} sem mudança · ${remover.length} a remover · ${r.erros.length} com problema</p>
+      ${financeiroPendente ? `<p>💰 <strong>Financeiro:</strong> ${financeiroPendente.resumo.modelos} modelo(s) de estoque (${financeiroPendente.resumo.pecas} peça(s)), ${financeiroPendente.resumo.vendas} saída(s) e ${financeiroPendente.resumo.entradas} entrada(s) serão atualizados na aba Financeiro. Custo e preço de venda que você definiu lá continuam como estão.</p>` : ""}
       ${remover.length ? `<h3>Não estão na planilha</h3>
         <label class="prod-check"><input type="checkbox" id="imp-remover" checked> Remover do painel os ${remover.length} produto(s) abaixo (o painel fica igual à planilha; cópias repetidas incluídas)</label>
         <ul class="imp-lista erro">${removidos}</ul>` : ""}
@@ -1107,8 +1114,9 @@
     const atualizarBotao = () => {
       const marcado = !!($("imp-remover") && $("imp-remover").checked);
       const total = r.alterados.length + r.novos.length + (marcado ? remover.length : 0);
-      $("imp-aplicar").disabled = !total;
-      $("imp-aplicar").textContent = total ? `Aplicar ${total} alteração(ões)` : "Aplicar";
+      const fin = !!financeiroPendente;
+      $("imp-aplicar").disabled = !total && !fin;
+      $("imp-aplicar").textContent = total ? `Aplicar ${total} alteração(ões)${fin ? " + financeiro" : ""}` : (fin ? "Atualizar financeiro" : "Aplicar");
     };
     if ($("imp-remover")) $("imp-remover").addEventListener("change", atualizarBotao);
     atualizarBotao();
@@ -1185,13 +1193,21 @@
         for (let i = 0; i < fotosSoltas.length; i += 100) await apagarFotos(fotosSoltas.slice(i, i + 100));
       }
     }
+    // Aba Financeiro (estoque/vendas da planilha). Falha aqui não desfaz o que já foi gravado.
+    let fin = null;
+    if (financeiroPendente && window.GestaoFinanceiro) {
+      botao.textContent = "Atualizando financeiro...";
+      fin = await window.GestaoFinanceiro.aplicar(financeiroPendente);
+    }
     fecharModal();
     const problemas = [];
+    if (fin && !fin.ok) problemas.push(`financeiro não atualizado: ${fin.erro}`);
     if (falhasFoto) problemas.push(`${falhasFoto} foto(s) não subiram: ${primeiroErroFoto}`);
     if (erroRemocao) problemas.push(`não consegui remover o que sobrou fora da planilha: ${erroRemocao}`);
-    aviso(`Pronto: ${pendente.alterados.length} atualizado(s), ${pendente.novos.length} novo(s)${paraRemover.length ? `, ${removidos} removido(s)` : ""}. O site já está atualizado.${problemas.length ? ` (${problemas.join("; ")})` : ""}`, problemas.length ? "erro" : undefined);
+    aviso(`Pronto: ${pendente.alterados.length} atualizado(s), ${pendente.novos.length} novo(s)${paraRemover.length ? `, ${removidos} removido(s)` : ""}${fin && fin.ok ? `; financeiro: ${fin.modelos} modelo(s) e ${fin.vendas} saída(s)` : ""}. O site já está atualizado.${problemas.length ? ` (${problemas.join("; ")})` : ""}`, problemas.length ? "erro" : undefined);
     pendente = null;
     imagensPendentes = null;
+    financeiroPendente = null;
     carregar();
   }
 
@@ -1216,7 +1232,7 @@
 #btn-sair { padding: 0.6em 1.5em; background: transparent; border: 1px solid var(--gold-dim); color: var(--ink); }
 #btn-sair:hover { background: var(--gold-light); }
 
-#aba-pedidos[hidden], #aba-produtos[hidden], .prod-modal[hidden], .prod-msg[hidden], .prod-vazio[hidden] { display: none !important; }
+#aba-pedidos[hidden], #aba-produtos[hidden], #aba-financeiro[hidden], .prod-modal[hidden], .prod-msg[hidden], .prod-vazio[hidden] { display: none !important; }
 
 .prod-barra { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
 .prod-busca {
@@ -1319,14 +1335,15 @@
   // ---------- abas e inicialização ----------
   function trocarAba(nome) {
     document.querySelectorAll(".gestao-aba").forEach((b) => b.classList.toggle("active", b.dataset.aba === nome));
-    $("aba-pedidos").hidden = nome !== "pedidos";
-    $("aba-produtos").hidden = nome !== "produtos";
+    ["pedidos", "produtos", "financeiro"].forEach((n) => { const el = $("aba-" + n); if (el) el.hidden = nome !== n; });
     if (nome === "produtos") carregar();
+    if (nome === "financeiro" && window.GestaoFinanceiro) window.GestaoFinanceiro.abrir();
   }
 
   function iniciar() {
     if (!$("aba-produtos")) return;
-    document.querySelectorAll(".gestao-aba").forEach((b) => b.addEventListener("click", () => trocarAba(b.dataset.aba)));
+    const barraAbas = document.querySelector(".gestao-abas");
+    if (barraAbas) barraAbas.addEventListener("click", (e) => { const b = e.target.closest(".gestao-aba"); if (b) trocarAba(b.dataset.aba); });
     $("prod-busca").addEventListener("input", desenhar);
     $("prod-novo").addEventListener("click", () => abrirEditor(null));
     $("prod-baixar").addEventListener("click", baixarPlanilha);
