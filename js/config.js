@@ -41,3 +41,19 @@ const VARIACOES_POR_CATEGORIA = {
     opcoes: ["16 cm", "18 cm", "20 cm"],
   },
 };
+
+// ============================================================
+// ALERTA DE NOVO PEDIDO POR E-MAIL (EmailJS)
+// Deixe os três campos vazios para desligar o alerta.
+// Passo a passo em: LEIA-ME-EMAILJS.md
+//   publicKey  -> emailjs.com > Account > General > Public Key
+//   serviceId  -> emailjs.com > Email Services (ex.: "service_abc123")
+//   templateId -> emailjs.com > Email Templates (ex.: "template_xyz789")
+// Essas chaves são públicas por natureza (ficam no navegador).
+// Proteja-as em EmailJS > Security > "Allowed domains" (só o seu site).
+// ============================================================
+const EMAILJS_CONFIG = {
+  publicKey: "",
+  serviceId: "",
+  templateId: "",
+};

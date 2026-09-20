@@ -356,6 +356,13 @@ function iniciarModoSacola(form, erroBox) {
       const { error } = await db.from("pedidos").insert(linhas);
       if (error) throw error;
 
+      if (window.notificarPedido) {
+        await window.notificarPedido({
+          ...comuns,
+          itens: linhas.map((l) => ({ nome: l.produto_nome, preco: l.preco, detalhes: l.detalhes })),
+        });
+      }
+
       sessionStorage.setItem("ultimoPedido", JSON.stringify({
         ...comuns,
         itens: linhas.map((l) => ({ produto_nome: l.produto_nome, preco: l.preco, detalhes: l.detalhes })),
@@ -430,6 +437,13 @@ async function iniciarFormularioPedido() {
     try {
       const { error } = await db.from("pedidos").insert(pedido);
       if (error) throw error;
+
+      if (window.notificarPedido) {
+        await window.notificarPedido({
+          ...pedido,
+          itens: [{ nome: pedido.produto_nome, preco: pedido.preco, detalhes: pedido.detalhes }],
+        });
+      }
 
       sessionStorage.setItem("ultimoPedido", JSON.stringify(pedido));
       window.location.href = "resumo.html";
