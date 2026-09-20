@@ -483,6 +483,137 @@
 
   let pendente = null;
 
+  // ---------- Leitura da planilha de Controle de Estoque/Vendas original ----------
+  // Aceita, além da planilha baixada pelo botão "Baixar planilha", a planilha de
+  // controle de estoque (abas ENTRADAS / SAIDA / ESTOQUE / CATALOGO) tal como ela é,
+  // sem precisar converter nada à mão antes de importar.
+
+  function achaAba(wb, nomeNormalizado) {
+    const n = wb.SheetNames.find((s) => norm(s) === nomeNormalizado);
+    return n ? wb.Sheets[n] : null;
+  }
+
+  function extrairEstoque(X, wb) {
+    const ws = achaAba(wb, "estoque");
+    if (!ws) return {};
+    const aoa = X.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+    let iCab = -1, iModelo = -1;
+    for (let i = 0; i < aoa.length; i++) {
+      const j = aoa[i].findIndex((c) => norm(c) === "modelo");
+      if (j >= 0) { iCab = i; iModelo = j; break; }
+    }
+    if (iCab < 0) return {};
+    const cab = aoa[iCab].map(norm);
+    const iNum = cab.findIndex((h) => h.includes("numeracoes disponiveis"));
+    const iSit = cab.findIndex((h) => h === "situacao");
+    const mapa = {};
+    for (let i = iCab + 1; i < aoa.length; i++) {
+      const modelo = String(aoa[i][iModelo] ?? "").trim();
+      if (!modelo) continue;
+      mapa[modelo] = {
+        tamanhos: iNum >= 0 ? String(aoa[i][iNum] ?? "").trim() : "",
+        situacao: iSit >= 0 ? String(aoa[i][iSit] ?? "").trim() : "",
+      };
+    }
+    return mapa;
+  }
+
+  function buscaEstoque(mapa, codigo) {
+    if (mapa[codigo]) return mapa[codigo];
+    const base = codigo.replace(/\.\d+$/, "");
+    return mapa[base] || null;
+  }
+
+  const CAT_LABELS = ["especificacoes", "acabamento", "conforto", "largura", "cor", "formato externo", "pedra", "detalhes", "numeracoes disponiveis"];
+
+  function catalogoGetField(bloco, rotulo) {
+    const alvo = norm(rotulo);
+    for (const linha of bloco) {
+      for (let j = 0; j < linha.length; j++) {
+        const c = linha[j];
+        if (typeof c === "string" && norm(c.replace(/:\s*$/, "")) === alvo) {
+          for (let k = j + 1; k < linha.length; k++) {
+            if (linha[k] !== "" && linha[k] != null) return String(linha[k]).trim();
+          }
+        }
+      }
+    }
+    return "";
+  }
+
+  function catalogoGetNome(bloco) {
+    let iSpec = bloco.findIndex((linha) => linha.some((c) => typeof c === "string" && norm(c.replace(/:\s*$/, "")) === "especificacoes"));
+    const alvo = iSpec >= 0 ? bloco.slice(0, iSpec) : bloco;
+    const candidatos = [];
+    for (const linha of alvo) {
+      for (const c of linha) {
+        if (typeof c !== "string" || !c.trim()) continue;
+        const s = c.trim();
+        if (s.startsWith("=")) continue;
+        if (CAT_LABELS.includes(norm(s.replace(/:\s*$/, "")))) continue;
+        if (s.length > 8) candidatos.push(s);
+      }
+    }
+    return candidatos.length ? candidatos[candidatos.length - 1] : "";
+  }
+
+  function extrairCatalogo(X, wb) {
+    const ws = achaAba(wb, "catalogo");
+    if (!ws) return [];
+    const aoa = X.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+    const posicoes = [];
+    for (let i = 0; i < aoa.length; i++) {
+      for (const c of aoa[i]) {
+        if (typeof c === "string" && c.trim().startsWith("Cód")) {
+          const m = c.match(/Cód\.?:\s*([A-Za-z0-9.]+)/);
+          posicoes.push({ linha: i, codigo: m ? m[1] : c.trim() });
+          break;
+        }
+      }
+    }
+    const produtos = [];
+    posicoes.forEach((p, idx) => {
+      const inicio = idx > 0 ? posicoes[idx - 1].linha + 1 : Math.max(0, p.linha - 30);
+      const bloco = aoa.slice(inicio, p.linha + 1);
+      produtos.push({
+        codigo: p.codigo,
+        nome: catalogoGetNome(bloco),
+        acabamento: catalogoGetField(bloco, "Acabamento"),
+        conforto: catalogoGetField(bloco, "Conforto"),
+        largura: catalogoGetField(bloco, "Largura"),
+        cor: catalogoGetField(bloco, "Cor"),
+        formato: catalogoGetField(bloco, "Formato Externo"),
+        pedra: catalogoGetField(bloco, "Pedra"),
+        detalhes: catalogoGetField(bloco, "Detalhes"),
+      });
+    });
+    return produtos;
+  }
+
+  // Converte a planilha de Controle de Estoque/Vendas (abas CATALOGO + ESTOQUE) para o
+  // formato { linhas, mapa } que analisar() já sabe processar, como se fosse a planilha
+  // baixada pelo botão "Baixar planilha".
+  function converterPlanilhaOriginal(X, wb) {
+    const catalogo = extrairCatalogo(X, wb);
+    if (!catalogo.length) return null;
+    const estoque = extrairEstoque(X, wb);
+    const mapa = {};
+    COLUNAS.forEach((c, i) => (mapa[c.k] = i));
+    const linhas = [COLUNAS.map((c) => c.t)];
+    catalogo.forEach((p) => {
+      const est = buscaEstoque(estoque, p.codigo) || {};
+      const detalhes = [p.detalhes, p.conforto ? `Conforto: ${p.conforto}` : ""].filter(Boolean).join(" · ");
+      const porChave = {
+        id: "", nome: p.nome, categoria: "Anéis", material: "Aço Cirúrgico", preco: 0,
+        descricao: "", codigo: p.codigo, cor: p.cor, pedra: p.pedra, largura: p.largura,
+        formato: p.formato, acabamento: p.acabamento, detalhes,
+        tamanhos: est.tamanhos || "", tamanhos_feminino: "", tamanhos_masculino: "", ativo: "Não",
+      };
+      linhas.push(COLUNAS.map((c) => porChave[c.k]));
+    });
+    return { linhas, mapa, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+  }
+
   async function aoEscolherPlanilha(evento) {
     const arquivo = evento.target.files[0];
     evento.target.value = "";
@@ -498,7 +629,14 @@
         const i = cab.findIndex((h) => h === norm(c.t) || h === c.k);
         if (i >= 0) mapa[c.k] = i;
       });
-      if (mapa.id === undefined) throw new Error('Não encontrei a coluna "ID". Use a planilha baixada pelo botão "Baixar planilha".');
+      if (mapa.id === undefined) {
+        const original = converterPlanilhaOriginal(X, wb);
+        if (!original) throw new Error('Não encontrei a coluna "ID" nem as abas CATALOGO/ESTOQUE. Use a planilha baixada pelo botão "Baixar planilha", ou a sua planilha de Controle de Estoque/Vendas original.');
+        pendente = analisar(original.linhas, original.mapa);
+        mostrarPrevia(pendente);
+        aviso(`Planilha de controle de estoque reconhecida: peças cadastradas como Anéis, preço 0 e ocultas do site até você preencher o preço real e marcar "Mostrar no site" em cada uma.`, "ok");
+        return;
+      }
       pendente = analisar(linhas, mapa);
       mostrarPrevia(pendente);
     } catch (erro) {
