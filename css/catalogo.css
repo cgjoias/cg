@@ -422,7 +422,11 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .detalhe-foto { height: 50vh; height: 50dvh; }
+  .detalhe-foto { height: 54vh; height: 54dvh; padding-top: calc(var(--topo-h) + 0.6rem); }
+  .lightbox-img {
+    top: calc(var(--topo-h) + 0.6rem);
+    height: calc(100% - var(--topo-h) - 1.35rem);
+  }
   .detalhe-info { max-height: none; overflow: visible; }
   .detalhe-info-conteudo { margin: 0; }
   .detalhe-info-acoes {
@@ -435,4 +439,44 @@
     border-top: 1px solid var(--bone-2);
   }
   [data-theme="dark"] .detalhe-info-acoes { background: #000; }
+}
+
+/* ---------- Celular: barra rosa no topo do painel de detalhes ----------
+   Mesma cor e linha preta do header do site (--header-bg), com os botões
+   "Tela cheia", tema e "Fechar" dentro dela. A barra fica fixa: só a peça rola. */
+@media (max-width: 760px) {
+  .lightbox { --topo-h: calc(64px + env(safe-area-inset-top, 0px)); }
+  .lightbox::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: var(--topo-h);
+    background: var(--header-bg);
+    border-bottom: 3px solid #000;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .lightbox-acoes,
+  .ampliar-foto {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    z-index: 6;
+  }
+  .lightbox-acoes { right: 12px; gap: 0.5rem; }
+  .ampliar-foto { left: 12px; }
+
+  /* botões sobre o rosa: fundo branco, borda preta 2px, texto escuro (nos dois modos) */
+  .lightbox-tema,
+  .lightbox-fechar,
+  .ampliar-foto {
+    height: 40px;
+    border: 2px solid #000;
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 2px 6px rgba(58, 20, 32, 0.18);
+  }
+  .lightbox-tema { width: 40px; }
+  .lightbox-fechar { background: var(--rose); } /* destaque no "Fechar" */
+  .lightbox-tema:hover,
+  .ampliar-foto:hover { background: var(--velvet-2); color: #1a1a1a; }
+  .lightbox-fechar:hover { background: #d1668a; color: #1a1a1a; }
 }
