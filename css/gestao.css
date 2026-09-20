@@ -249,3 +249,4 @@
 @media (max-width: 380px) {
   .ped-kpis { grid-template-columns: minmax(0, 1fr); }
 }
+.ped-info a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
