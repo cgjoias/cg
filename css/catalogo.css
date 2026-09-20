@@ -480,3 +480,22 @@
   .ampliar-foto:hover { background: var(--velvet-2); color: #1a1a1a; }
   .lightbox-fechar:hover { background: #d1668a; color: #1a1a1a; }
 }
+
+/* ---------- Segurança: "Fechar" sempre visível ----------
+   Se o catalogo.html ainda for a versão antiga (sem o grupo .lightbox-acoes),
+   o botão Fechar é filho direto do painel — então ele se posiciona sozinho. */
+.detalhe-painel > .lightbox-fechar {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 6;
+}
+@media (max-width: 760px) {
+  .detalhe-painel > .lightbox-fechar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 12px;
+  }
+  /* painel rola, mas sem mostrar a barra de rolagem dourada na borda */
+  .detalhe-painel { scrollbar-width: none; }
+  .detalhe-painel::-webkit-scrollbar { display: none; }
+}
