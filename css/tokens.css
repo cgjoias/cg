@@ -1,0 +1,78 @@
+/*
+  TOKENS — Identidade visual
+  Conceito: joalheria em tons de rosa e branco, sem dourado. Molduras
+  circulares (medalhão) como elemento assinatura, usadas em categorias,
+  produtos e retratos de peças ao longo do site.
+
+  Suporta modo claro (padrão) e modo escuro via atributo
+  [data-theme="dark"] na tag <html>, alternado pelo botão no menu
+  (ver js/tema.js). --velvet, --velvet-2, --velvet-3, --bone e --gold
+  ficam praticamente iguais nos dois modos (usados no cabeçalho/rodapé/
+  hero) — só as superfícies de conteúdo (--page-bg, --surface, --bone-2,
+  --ink, --muted) trocam.
+*/
+
+:root {
+  /* Cor — marca (fixas nos dois modos: cabeçalho, rodapé, hero) */
+  --velvet: #F4B9CD;       /* superfície primária — mesmo rosa profundo dos cards */
+  --velvet-2: #F6C6D5;     /* superfície secundária (cards sobre a superfície principal) */
+  --velvet-3: #ED9FBE;     /* bordas/hover sobre a superfície principal */
+  --bone: #3a1420;         /* texto/ícone escuro sobre a superfície principal (agora clara) */
+  --gold: #7a2142;         /* acento (sem dourado) — links, ícones, bordas */
+  --gold-light: #f6dbe4;   /* acento claro — hover, destaque sobre a superfície principal */
+  --gold-shine: #ffffff;   /* brilho branco — usado só no medalhão, não usar como texto */
+  --medallion-gold: #D4A017;       /* dourado vivo — reservado só pro anel do medalhão/foto de produto */
+  --medallion-gold-light: #F0C452; /* dourado vivo claro — reservado só pro anel do medalhão/foto de produto */
+  --rose: #e07a9a;         /* acento secundário — status, avisos suaves */
+  --nav-gold: #C98A00;     /* dourado forte — item ativo/hover do menu (contraste maior sobre o rosa do cabeçalho) */
+  --btn-primary-bg: #E07A9A; /* rosa do botão principal (mais suave que o vinho) */
+  --divider-color: #000000; /* linha divisória entre seções da home — preta no claro, branca no escuro */
+  --section-bg: #FFFFFF;   /* fundo das seções Categorias e faixa de confiança da home — branco no claro, preto no escuro */
+  --dropdown-bg: #FFFFFF;  /* fundo do menu suspenso "Mais" — branco nos dois modos */
+  --header-bg: #F1AFC7;    /* cabeçalho (menu) — MESMO tom nos modos claro e escuro; não sobrescrever em [data-theme="dark"] */
+
+  /* Cor — conteúdo (alternam entre modo claro/escuro) */
+  --ink: #3a1420;          /* texto principal sobre superfície clara */
+  --muted: #7a7566;        /* texto secundário (descrições, legendas) */
+  --gold-dim: #6b1c39;     /* acento escuro — texto sobre superfície clara */
+  --page-bg: #FBDFE8;      /* fundo geral da página */
+  --surface: #F4B9CD;      /* fundo de cartões, campos e botões — rosa mais profundo */
+  --bone-2: #fdeaf1;       /* superfície secundária — rosa fraco (faixas, hover) */
+  --rose-light: #fbe4ec;
+
+  /* Tipografia */
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body: "Jost", "Segoe UI", sans-serif;
+
+  /* Escala */
+  --step-eyebrow: 0.78rem;
+  --step-body: 1rem;
+  --step-h3: 1.5rem;
+  --step-h2: 2.1rem;
+  --step-h1: clamp(2.6rem, 5vw, 4.4rem);
+
+  /* Espaçamento */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.75rem;
+  --space-4: 2.75rem;
+  --space-5: 4.5rem;
+
+  /* Forma */
+  --radius-s: 6px;
+  --radius-m: 14px;
+  --line: 1px solid rgba(122, 33, 66, 0.25);
+}
+
+/* ---------- Modo escuro ---------- */
+[data-theme="dark"] {
+  --section-bg: #000000;
+  --divider-color: #FFFFFF;
+  --ink: #f7ebef;
+  --muted: #cfa9b6;
+  --gold-dim: #eaadc3;
+  --page-bg: #24101a;
+  --surface: #331722;
+  --bone-2: #40202e;
+  --rose-light: #4a2130;
+}

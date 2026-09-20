@@ -1,0 +1,374 @@
+.catalogo-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+  border-bottom: 3px solid #000; /* linha preta embaixo do título — preta no claro, branca no escuro (igual às páginas institucionais) */
+}
+[data-theme="dark"] .catalogo-header { border-bottom-color: #fff; } /* modo escuro: linha branca */
+.catalogo-header h1 { color: var(--bone); }
+.catalogo-header .eyebrow { justify-content: center; }
+
+.busca-produto {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  max-width: 420px;
+  margin: var(--space-3) auto 0;
+  padding: 0.7em 1.2em;
+  background: var(--surface);
+  border: 2px solid var(--divider-color);
+  border-radius: 999px;
+  transition: border-color 0.2s ease;
+}
+.busca-produto svg { flex-shrink: 0; color: var(--muted); }
+.busca-produto:focus-within { border-color: var(--medallion-gold); }
+.busca-produto input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+.busca-produto input::placeholder { color: var(--muted); }
+.busca-produto input::-webkit-search-cancel-button { cursor: pointer; }
+
+.tabs-categoria {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+}
+.tabs-categoria button {
+  border: 2px solid var(--divider-color);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.55em 1.3em;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tabs-categoria button:hover { border-color: var(--medallion-gold); }
+.tabs-categoria button.active { background: var(--velvet); color: var(--nav-gold); border-color: var(--nav-gold); }
+/* Modo escuro: a categoria selecionada mantém o visual anterior (borda branca, letra escura) */
+[data-theme="dark"] .tabs-categoria button.active { color: var(--bone); border-color: var(--divider-color); }
+
+.grid-produtos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-5);
+}
+@media (max-width: 900px) { .grid-produtos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .grid-produtos { grid-template-columns: minmax(0, 1fr); } }
+
+.produto-card {
+  background: var(--surface);
+  border: 2px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.produto-card:hover { transform: translateY(-2px); }
+.produto-medalhao { width: 130px; margin-bottom: var(--space-2); }
+.produto-card h3 { font-size: 1.1rem; margin-bottom: 0.1em; }
+.produto-material { color: var(--gold-dim); font-size: 0.8rem; letter-spacing: 0.03em; margin-bottom: 0.3em; }
+.produto-preco { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.4em; }
+.produto-codigo { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); flex-grow: 1; }
+.produto-card .btn { width: 100%; position: relative; z-index: 1; }
+.produto-card .btn-line,
+.produto-card .btn-line:hover { border: 2px solid var(--divider-color); }
+
+#catalogo-vazio { text-align: center; padding: var(--space-4) 0; color: var(--muted); }
+
+/* ---------- Medalhão clicável (abre foto ampliada) ---------- */
+.produto-medalhao {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+.produto-medalhao:hover { transform: scale(1.04); }
+.produto-medalhao:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+/* ---------- Modal de detalhes (fotos + especificações + tamanhos) ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--surface);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+.lightbox[hidden] { display: none; }
+
+/* Painel de detalhes em TELA CHEIA, SEM ROLAGEM (desktop e celular):
+   tudo cabe na altura da tela. O JS (ajustarInfo em catalogo.js) reduz o texto
+   só o necessário quando a tela é muito baixa. */
+.detalhe-painel {
+  position: relative;
+  background: var(--surface);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+@media (max-width: 760px) {
+  .detalhe-painel { display: flex; flex-direction: column; }
+}
+
+.detalhe-foto {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bone-2);
+  padding: var(--space-4);
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: calc(100vh - 6rem);
+  max-height: calc(100dvh - 6rem);
+  border-radius: var(--radius-s);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.detalhe-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 4rem clamp(1.5rem, 4vw, 4.5rem) 1.25rem;
+  color: var(--ink);
+  overflow-y: auto; /* só aparece se o navegador não suportar o ajuste automático */
+  border-left: 2px solid var(--divider-color);
+}
+/* conteúdo centralizado na vertical quando sobra espaço */
+.detalhe-info-conteudo { margin: auto 0; width: 100%; }
+
+@media (max-width: 760px) {
+  .detalhe-foto { flex: 1 1 0; padding: 3.6rem 0.75rem 0.75rem; }
+  /* foto ocupa exatamente o espaço que sobra acima das informações */
+  .lightbox-img {
+    position: absolute;
+    top: 3.6rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: calc(100% - 1.5rem);
+    height: calc(100% - 4.35rem);
+    max-height: none;
+  }
+  .detalhe-info {
+    flex: 0 0 auto;
+    max-height: 64vh;
+    max-height: 64dvh;
+    padding: 0.8rem 1rem calc(0.9rem + env(safe-area-inset-bottom));
+    border-left: none;
+    border-top: 2px solid var(--divider-color);
+  }
+}
+.detalhe-info h3 { font-size: clamp(1.4rem, 3.2vh, 1.8rem); margin-bottom: 0.2em; }
+.detalhe-codigo { color: var(--muted); font-size: 0.86rem; margin-bottom: 0.4em; }
+.detalhe-preco { font-family: var(--font-display); font-size: clamp(1.5rem, 3.6vh, 1.9rem); margin-bottom: 0.2em; }
+.detalhe-material { color: var(--gold-dim); font-size: 0.85rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); }
+
+.detalhe-specs {
+  border-top: 1px solid var(--bone-2);
+  border-bottom: 1px solid var(--bone-2);
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+}
+.detalhe-spec-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.88rem;
+  padding: 0.2em 0;
+}
+.detalhe-spec-linha span:first-child { color: var(--muted); }
+.detalhe-spec-linha span:last-child { text-align: right; font-weight: 600; }
+
+.detalhe-tamanhos { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-grupo { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-rotulo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3em;
+}
+.detalhe-tamanhos-lista { display: flex; flex-wrap: wrap; gap: 0.4em; }
+.tamanho-chip {
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.25em 0.8em;
+  font-size: 0.82rem;
+}
+
+.detalhe-descricao {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.detalhe-info .btn { width: 100%; }
+
+/* Botão Fechar: pílula "✕ Fechar", fixa no canto (não some ao rolar no celular) */
+.lightbox-fechar {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  height: 46px;
+  padding: 0 1.2em;
+  gap: 0.5em;
+  border-radius: 999px;
+  border: 2px solid var(--divider-color);
+  background: var(--section-bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  z-index: 5;
+}
+.lightbox-fechar:hover { background: var(--ink); color: var(--section-bg); }
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+.lightbox-nav:hover { background: var(--velvet-3); }
+.lightbox-prev { left: var(--space-2); }
+.lightbox-next { right: var(--space-2); }
+@media (max-width: 640px) {
+  .lightbox-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+}
+
+/* Botão "Adicionar à sacola" (cartão e painel de detalhes) */
+.btn-sacola {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--divider-color);
+  margin-top: 0.5rem;
+}
+.btn-sacola:disabled { opacity: 0.7; cursor: default; }
+
+/* Modo escuro: fundo da página do catálogo em preto */
+[data-theme="dark"] body.pagina-catalogo { background: #000; }
+
+/* Efeito de hover igual nos dois botões (Pedir esta peça / Adicionar à sacola),
+   no cartão e no painel de detalhes: preenche com a cor do texto (escuro no modo
+   claro, claro no modo escuro) e inverte a cor da letra. */
+.produto-card .btn-line:hover,
+.btn-sacola:hover,
+.detalhe-info .btn-primary:hover {
+  background: var(--ink);
+  color: var(--section-bg);
+  border-color: var(--divider-color);
+}
+
+/* Botão "Tela cheia" sobre a foto do painel de detalhes */
+.ampliar-foto {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 0.95em;
+  border-radius: 999px;
+  border: 2px solid var(--divider-color);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.ampliar-foto:hover { background: var(--ink); color: var(--section-bg); }
+
+/* Modo escuro: painel de detalhes em preto */
+[data-theme="dark"] .detalhe-painel,
+[data-theme="dark"] .detalhe-foto,
+[data-theme="dark"] .lightbox { background: #000; }
+
+/* Celular: cabeçalho, medidas e botões mais compactos para tudo caber sem rolar */
+@media (max-width: 760px) {
+  .lightbox-fechar { height: 40px; padding: 0 0.9em; font-size: 0.88rem; }
+  .ampliar-foto {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    bottom: auto;
+    height: 40px;
+    padding: 0 0.9em;
+    background: var(--section-bg);
+  }
+  .detalhe-info h3 { font-size: 1.2rem; }
+  .detalhe-codigo { margin-bottom: 0.2em; }
+  .detalhe-preco { font-size: 1.35rem; }
+  .detalhe-material { margin-bottom: 0.5rem; }
+  .detalhe-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1rem;
+    padding: 0.4rem 0;
+    margin-bottom: 0.5rem;
+  }
+  .detalhe-spec-linha { font-size: 0.8rem; padding: 0; gap: 0.4em; }
+  .detalhe-tamanhos { margin-bottom: 0.5rem; }
+  .detalhe-tamanhos-grupo { margin-bottom: 0.3rem; }
+  .detalhe-descricao { -webkit-line-clamp: 2; font-size: 0.82rem; margin-bottom: 0.6rem; }
+  .detalhe-info-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .detalhe-info .btn { padding: 0.7em 0.6em; font-size: 0.85rem; }
+  .btn-sacola { margin-top: 0; }
+}
+@media (min-width: 761px) and (max-height: 700px) {
+  .detalhe-descricao { -webkit-line-clamp: 2; }
+  .detalhe-info { padding-top: 3.6rem; }
+}
+
+/* Modo escuro: borda do botão "Pedir esta peça" do painel em branco (a preta sumiria no fundo preto) */
+[data-theme="dark"] .detalhe-info .btn-primary { border-color: var(--divider-color); }

@@ -1,0 +1,51 @@
+.resumo-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+}
+.resumo-header h1 { color: var(--bone); }
+.resumo-header .eyebrow { justify-content: center; }
+
+.resumo-wrap {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-5);
+}
+
+.resumo-card {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-4);
+  text-align: center;
+}
+.resumo-card .selo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--bone);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin: 0 auto var(--space-2);
+}
+
+#resumo-lista {
+  text-align: left;
+  background: var(--bone-2);
+  border-radius: var(--radius-s);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+}
+#resumo-lista p { margin: 0 0 0.5em; font-size: 0.94rem; }
+
+.resumo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+#resumo-vazio { text-align: center; padding: var(--space-4) 0; }

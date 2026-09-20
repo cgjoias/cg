@@ -1,0 +1,150 @@
+/* ---------- Cabeçalho simples das páginas institucionais ---------- */
+.institucional-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+  border-bottom: 3px solid #000; /* linha preta embaixo do título — preta no claro, branca no escuro (mesma espessura da linha do menu) */
+}
+[data-theme="dark"] .institucional-header { border-bottom-color: #fff; } /* modo escuro: linha branca */
+
+/* Modo escuro: fundo PRETO (e não o vinho do tema) nas páginas institucionais.
+   Superfícies e bordas internas (ex.: perguntas do FAQ) acompanham. */
+[data-theme="dark"] {
+  --page-bg: #000000;
+  --surface: #000000;
+  --bone-2: #3a3a3a;
+  --rose-light: #1a1a1a;
+}
+.institucional-header h1 { color: var(--bone); margin-bottom: 0.3em; }
+.institucional-header p { color: var(--bone); max-width: 720px; margin: 0 auto; }
+
+.institucional-wrap {
+  max-width: 1120px; /* largura profissional no desktop (antes 780px) */
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+@media (max-width: 860px) {
+  .institucional-wrap { padding: var(--space-3) var(--space-2) var(--space-4); }
+}
+
+/* Botão "Voltar": pílula com borda (preta no claro / branca no escuro),
+   seta dentro de um círculo e animação de deslizar no hover. */
+.institucional-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.4em 1.3em 0.4em 0.4em;
+  border: 2px solid var(--divider-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--divider-color);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  margin-bottom: var(--space-4);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.institucional-voltar .seta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  background: var(--divider-color);
+  color: var(--page-bg);
+  font-size: 1.05em;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.institucional-voltar:hover {
+  background: var(--btn-primary-bg);
+  color: #000;
+  box-shadow: 0 6px 16px rgba(224, 122, 154, 0.35);
+  transform: translateY(-1px);
+}
+.institucional-voltar:hover .seta { transform: translateX(-4px); }
+.institucional-voltar:active { transform: translateY(0); }
+.institucional-voltar:focus-visible { outline: 3px solid var(--btn-primary-bg); outline-offset: 3px; }
+
+.institucional-corpo { font-size: 1.06rem; }
+.institucional-corpo h2 {
+  font-weight: 700; /* títulos das seções em negrito nos dois modos */
+  font-size: 1.4rem;
+  margin-top: var(--space-4);
+  margin-bottom: 0.5em;
+  color: var(--gold-dim);
+}
+.institucional-corpo h2:first-child { margin-top: 0; }
+.institucional-corpo p {
+  margin-bottom: 1em;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.institucional-corpo ul,
+.institucional-corpo ol {
+  margin: 0 0 0.9em 1.2em;
+  line-height: 1.65;
+}
+.institucional-corpo li { margin-bottom: 0.35em; }
+.institucional-corpo strong { color: var(--ink); }
+.institucional-corpo .atualizado {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- Perguntas e respostas (FAQ) ---------- */
+.faq-item {
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-s);
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+}
+.faq-pergunta {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: none;
+  padding: 0.9em 1.1em;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+}
+.faq-pergunta .sinal { color: var(--gold); font-size: 1.1rem; flex-shrink: 0; }
+.faq-resposta {
+  padding: 0 1.1em 1em;
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+.faq-item:not(.aberto) .faq-resposta { display: none; }
+.faq-item.aberto .faq-pergunta .sinal { transform: rotate(45deg); }
+
+/* ---------- Cartões de contato (Fale Conosco) ---------- */
+.contato-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.contato-card {
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-s);
+  padding: var(--space-3);
+  text-align: center;
+  color: var(--ink);
+}
+.contato-card .icone { font-size: 1.6rem; margin-bottom: 0.4em; display: block; }
+.contato-card strong { display: block; margin-bottom: 0.2em; }
+.contato-card a { color: var(--gold-dim); font-size: 0.9rem; }
+.contato-card a:hover { color: var(--gold); }

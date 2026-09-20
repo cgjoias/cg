@@ -1,0 +1,248 @@
+/*
+  SACOLA + VOLTAR AO TOPO
+  Botões flutuantes empilhados acima do WhatsApp (canto inferior direito):
+    WhatsApp (base) → Sacola → Voltar ao topo
+  Painel lateral da sacola usa as cores de conteúdo (--section-bg / --ink),
+  então já acompanha o modo claro (branco) e o escuro (preto).
+*/
+
+.fab {
+  position: fixed;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 60;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.25s ease, visibility 0.25s;
+}
+.fab svg { display: block; }
+
+/* Sacola — círculo escuro, ícone branco, contador branco */
+.fab-sacola {
+  right: 22px;
+  bottom: 92px;
+  width: 58px;
+  height: 58px;
+  background: #2b1a22;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+.fab-sacola svg { width: 28px; height: 28px; }
+.fab-sacola:hover { transform: scale(1.07); }
+.fab-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+.fab-sacola.pulsar { animation: sacola-pulso 0.45s ease; }
+@keyframes sacola-pulso {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Voltar ao topo — círculo rosa claro, seta vinho; só aparece depois de rolar */
+.fab-topo {
+  right: 22px;
+  bottom: 162px;
+  width: 58px;
+  height: 58px;
+  background: #fbdfe8;
+  color: #7a2142;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+}
+.fab-topo svg { width: 26px; height: 26px; }
+.fab-topo.visivel { opacity: 1; visibility: visible; }
+.fab-topo:hover { transform: translateY(-2px); }
+
+/* Modo escuro: a sacola escura some no fundo preto, então ganha contorno rosa */
+[data-theme="dark"] .fab-sacola { background: #1a0e14; border: 2px solid var(--header-bg); }
+
+@media (max-width: 720px) {
+  .fab-sacola { right: 16px; bottom: 78px; width: 52px; height: 52px; }
+  .fab-sacola svg { width: 25px; height: 25px; }
+  .fab-topo { right: 16px; bottom: 140px; width: 52px; height: 52px; }
+  .fab-topo svg { width: 23px; height: 23px; }
+}
+
+/* ---------- Painel lateral ---------- */
+.sacola-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s;
+  z-index: 110;
+}
+.sacola-overlay.aberto { opacity: 1; visibility: visible; }
+
+.sacola-painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(400px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--section-bg);
+  color: var(--ink);
+  border-left: 3px solid var(--divider-color);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.25);
+  transform: translateX(105%);
+  visibility: hidden;
+  transition: transform 0.28s ease, visibility 0.28s;
+  z-index: 120;
+}
+.sacola-painel.aberto { transform: translateX(0); visibility: visible; }
+body.sacola-aberta { overflow: hidden; }
+
+.sacola-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid rgba(122, 33, 66, 0.25);
+}
+.sacola-topo h2 { margin: 0; font-size: 1.5rem; }
+.sacola-fechar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.sacola-fechar:hover { border-color: var(--medallion-gold); color: var(--medallion-gold); }
+
+.sacola-corpo { flex: 1; overflow-y: auto; padding: var(--space-2) var(--space-3); }
+.sacola-lista { list-style: none; margin: 0; padding: 0; }
+.sacola-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid rgba(122, 33, 66, 0.2);
+}
+.sacola-item-foto {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 2px solid var(--medallion-gold);
+}
+.sacola-item-info { min-width: 0; }
+.sacola-item-nome { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; line-height: 1.2; }
+.sacola-item-preco { margin: 0.15em 0 0.5em; color: var(--gold-dim); font-size: 0.95rem; }
+.sacola-item-detalhes {
+  width: 100%;
+  padding: 0.5em 0.7em;
+  border-radius: var(--radius-s);
+  border: 1px solid rgba(122, 33, 66, 0.35);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+.sacola-item-detalhes::placeholder { color: var(--muted); }
+.sacola-item-remover {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2em 0.4em;
+}
+.sacola-item-remover:hover { color: var(--rose); }
+
+.sacola-vazio { text-align: center; padding: var(--space-4) 0; color: var(--muted); }
+.sacola-vazio .btn { margin-top: var(--space-1); color: var(--ink); }
+
+.sacola-rodape {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-top: 1px solid rgba(122, 33, 66, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.sacola-total { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.05rem; }
+.sacola-total strong { font-family: var(--font-display); font-size: 1.5rem; }
+.sacola-limpar {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.3em;
+}
+.sacola-limpar:hover { color: var(--rose); }
+
+/* Aviso "adicionada à sacola" */
+.sacola-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 20px);
+  max-width: min(90vw, 420px);
+  padding: 0.75em 1.3em;
+  border-radius: 999px;
+  background: #2b1a22;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.9rem;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+  z-index: 130;
+  pointer-events: none;
+}
+.sacola-toast.visivel { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+
+/* Resumo da sacola na página de pedido (pedido.html?sacola=1) */
+.pedido-sacola { grid-column: 1; min-width: 0; }
+.pedido-sacola h2 { font-size: 1.4rem; margin-bottom: var(--space-1); }
+.pedido-sacola-lista { list-style: none; margin: 0; padding: 0; }
+.pedido-sacola-lista li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  padding: 0.6em 0;
+  border-bottom: 1px solid rgba(122, 33, 66, 0.2);
+}
+.pedido-sacola-lista img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 2px solid var(--medallion-gold);
+}
+.pedido-sacola-lista .ps-nome { margin: 0; font-family: var(--font-display); font-weight: 600; line-height: 1.2; }
+.pedido-sacola-lista .ps-info { margin: 0.1em 0 0; font-size: 0.85rem; color: var(--muted); }
+.pedido-sacola-total { display: flex; justify-content: space-between; align-items: baseline; margin: var(--space-2) 0 0.3em; }
+.pedido-sacola-total strong { font-family: var(--font-display); font-size: 1.4rem; }
+.pedido-sacola-editar { font-size: 0.85rem; text-decoration: underline; background: none; border: none; color: var(--ink); cursor: pointer; padding: 0; font-family: var(--font-body); }

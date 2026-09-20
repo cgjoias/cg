@@ -1,0 +1,416 @@
+/* ---------- Modo tela cheia ----------
+   A página de pedido vira uma experiência tipo "modal" cobrindo a tela
+   inteira (desktop e mobile), sem menu, sem rodapé e SEM o header rosa
+   "Fazer pedido" — foi removido do HTML (não só escondido). Nada aqui
+   rola: nem a página (html/body), nem o card. Quem fecha é o botão "×"
+   fixo (#pedido-fechar), que volta pro catálogo. */
+/* Cores da tela de pedido, por tema:
+   claro  → fundo branco, texto/bordas pretos
+   escuro → fundo preto, texto/bordas brancos */
+:root {
+  --pedido-bg: #ffffff;
+  --pedido-fg: #000000;
+}
+[data-theme="dark"] {
+  --pedido-bg: #000000;
+  --pedido-fg: #ffffff;
+}
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido-bg); }
+.nav,
+.site-footer { display: none !important; }
+.fab-topo { display: none !important; } /* "voltar ao topo" não faz sentido numa tela sem scroll — mas a sacola e o WhatsApp continuam */
+
+.pedido-wrap {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  background: var(--pedido-bg);
+  overflow: hidden;
+}
+
+.pedido-card {
+  /* Fundo preto sólido — igual nos dois modos, tipo um "visualizador"
+     da peça — em vez de herdar o --surface (rosa no claro / vinho no
+     escuro). As variáveis abaixo são reatribuídas só dentro do card,
+     então inputs, textos e placeholders puxam esse tema escuro junto. */
+  --surface: #ffffff;
+  --ink: #000000;
+  --bone-2: #b8b8b8; /* bordas dos campos e chips no modo claro */
+  --muted: #555555;
+  --gold-dim: #7a2142;
+  background: var(--pedido-bg);
+  color: var(--ink);
+  border: none;
+  border-radius: 0;
+  padding: var(--space-3);
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+[data-theme="dark"] .pedido-card {
+  --surface: #000000;
+  --ink: #f7ebef;
+  --bone-2: #2a2a2a;
+  --muted: #b9a7ae;
+  --gold-dim: #eaadc3;
+}
+.pedido-card form {
+  grid-column: 2;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  /* Espaço reservado à direita pra sacola/WhatsApp (fixos naquele canto)
+     nunca ficarem em cima de um campo ou do botão "Finalizar pedido". */
+  padding-right: 92px;
+}
+.pedido-card #pedido-erro { grid-column: 2; min-width: 0; padding-right: 92px; }
+
+/* ---------- Compactação: tudo precisa caber na tela, sem scroll ---------- */
+.pedido-card .field { margin-bottom: 0.5rem; gap: 0.25em; }
+.pedido-card .field label { font-size: 0.76rem; }
+.pedido-card .field input,
+.pedido-card .field select,
+.pedido-card .field textarea { padding: 0.6em 0.85em; font-size: 0.92rem; }
+.pedido-card .field textarea { min-height: 44px; }
+.pedido-card .field-row { gap: 0.6rem; }
+.pedido-card .pedido-actions-row { margin-top: 0.5rem; }
+.pedido-card .pedido-actions-row .btn { padding: 0.7em 1.3em; font-size: 0.86rem; }
+
+@media (max-width: 860px) {
+  .pedido-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(90px, 24vh) 1fr;
+    padding: var(--space-2);
+    gap: 0.6rem;
+    overflow: hidden;
+  }
+  .pedido-card form,
+  .pedido-card #pedido-erro { grid-column: 1; }
+  .pedido-card form {
+    justify-content: center;
+    gap: 0.3rem;
+    min-height: 0;
+    overflow: hidden;
+    padding-right: 68px; /* sacola/WhatsApp são menores no mobile */
+  }
+  .pedido-card #pedido-erro { padding-right: 68px; }
+  .pedido-media { display: flex; flex-direction: column; min-height: 0; }
+  .pedido-foto-principal { flex: 1 1 auto; min-height: 0; }
+  .pedido-foto-miniaturas { display: none; }
+  .pedido-media-info { display: none; } /* nome/código/preço já aparecem no select "Peça desejada" */
+
+  /* Nome + WhatsApp lado a lado mesmo no mobile, pra economizar altura */
+  .pedido-card .field-row { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+  .pedido-card .field { margin-bottom: 0.35rem; }
+  .pedido-card .field-hint { display: none; } /* dica visual, não essencial */
+  .pedido-card .field textarea { min-height: 34px; }
+  .pedido-card .chips-variacao-linha { gap: 0.3rem; }
+  .pedido-card .chips-variacao-rotulo { margin-bottom: 0.25rem; font-size: 0.74rem; }
+}
+
+/* Coluna de ações fixa no canto superior direito: fechar (×) em cima e,
+   logo abaixo, o alternador de tema claro/escuro. Desktop e mobile. */
+.pedido-acoes {
+  position: fixed;
+  top: max(env(safe-area-inset-top, 0px), var(--space-2));
+  right: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 200; /* abaixo do .zoom-overlay (300): some por baixo dele quando a foto abre em tela cheia */
+}
+.pedido-fechar,
+.pedido-tema {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--pedido-fg); /* borda circular: preta no claro, branca no escuro */
+  background: var(--pedido-bg);
+  color: var(--pedido-fg);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.pedido-fechar:hover,
+.pedido-tema:hover { background: var(--pedido-fg); color: var(--pedido-bg); }
+.pedido-fechar:active,
+.pedido-tema:active { transform: scale(0.92); }
+/* ícone: sol no modo claro, lua no modo escuro */
+.pedido-tema .icon-lua { display: none; }
+[data-theme="dark"] .pedido-tema .icon-sol { display: none; }
+[data-theme="dark"] .pedido-tema .icon-lua { display: block; }
+@media (max-width: 860px) {
+  .pedido-acoes {
+    top: max(env(safe-area-inset-top, 0px), var(--space-1));
+    right: var(--space-1);
+    gap: 0.5rem;
+  }
+  .pedido-fechar,
+  .pedido-tema { width: 36px; height: 36px; }
+}
+
+/* ---------- Painel de fotos da peça escolhida ---------- */
+.pedido-media {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: var(--space-3);
+}
+.pedido-media[hidden] { display: none; }
+
+/* No mobile o layout vira 1 coluna só (foto em cima, formulário embaixo).
+   O "position: sticky" acima é só pro desktop (2 colunas lado a lado); em
+   coluna única ele fazia a foto "grudar" no topo da tela e ficar sobreposta
+   ao formulário enquanto a página rolava. Essa regra precisa vir DEPOIS da
+   regra base acima, senão o cascade do CSS ignora ela no mobile. */
+@media (max-width: 860px) {
+  .pedido-media {
+    position: static;
+    top: auto;
+    grid-row: auto;
+    grid-column: 1;
+  }
+}
+.pedido-foto-principal {
+  position: relative;
+  background: var(--bone-2);
+  border-radius: var(--radius-m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.pedido-foto-principal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.pedido-foto-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.pedido-foto-prev { left: 0.6rem; }
+.pedido-foto-next { right: 0.6rem; }
+.pedido-foto-miniaturas {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  flex-wrap: wrap;
+}
+.pedido-foto-miniaturas img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.pedido-foto-miniaturas img:hover { opacity: 1; }
+.pedido-foto-miniaturas img.ativa { border-color: var(--gold); opacity: 1; }
+.pedido-media-info { margin-top: var(--space-2); }
+.pedido-media-info h2 { font-size: 1.25rem; margin-bottom: 0.15em; }
+.pedido-media-codigo { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.2em; }
+.pedido-media-preco { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); }
+
+.pedido-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.pedido-actions-row .btn-primary {
+  background: #000;
+  color: #fff;
+  border-color: var(--pedido-fg);
+}
+.pedido-actions-row .btn-primary:hover {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: var(--pedido-fg);
+}
+.pedido-actions-row .btn-line {
+  background: transparent;
+  color: var(--pedido-fg);
+  border-color: var(--pedido-fg);
+}
+.pedido-actions-row .btn-line:hover {
+  background: var(--pedido-fg);
+  color: var(--pedido-bg);
+  border-color: var(--pedido-fg);
+}
+
+.alert-erro {
+  background: var(--rose-light);
+  color: var(--rose);
+  border-radius: var(--radius-s);
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 0.9rem;
+}
+
+/* ---------- Chips de tamanho/cor/variação (formulário de pedido) ---------- */
+/* Container externo: só empilha os grupos (Aro feminino / Aro masculino).
+   NÃO é grid — quem vira grid é .chips-variacao-linha, para não espremer
+   o grupo inteiro dentro de uma coluna de 64px. */
+.chips-variacao {
+  display: block;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+.chips-variacao[hidden] { display: none; }
+
+.chips-variacao-grupo {
+  margin-top: 0.9rem;
+  width: 100%;
+}
+.chips-variacao-grupo:first-child { margin-top: 0; }
+.chips-variacao-rotulo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.4rem;
+}
+
+/* Linha real de botões (números do aro, ou opções simples).
+   auto-fill deixa quantos couberem por linha, e o mínimo baixo garante
+   várias colunas mesmo no celular. */
+.chips-variacao-linha {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+@media (max-width: 480px) {
+  .chips-variacao-linha { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 0.4rem; }
+}
+
+.chip {
+  position: relative;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
+}
+.chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.chip span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 0.2em;
+  border: 1px solid var(--bone-2);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--surface);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  text-align: center;
+}
+.chip input:checked + span {
+  background: var(--velvet);
+  color: var(--bone);
+  border-color: var(--velvet);
+}
+.chip input:hover + span { border-color: var(--gold); }
+.chip input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Bordas um pouco mais grossas nos campos e bolinhas de aro ----------
+   Branca no modo escuro, preta no modo claro (var(--pedido-fg)). */
+.pedido-card .field input,
+.pedido-card .field select,
+.pedido-card .field textarea {
+  border: 1.5px solid var(--pedido-fg);
+}
+.pedido-card .field input:focus,
+.pedido-card .field select:focus,
+.pedido-card .field textarea:focus {
+  border-color: var(--pedido-fg);
+  box-shadow: 0 0 0 3px rgba(224, 122, 154, 0.45);
+}
+.pedido-card .chip span {
+  border: 1.5px solid var(--pedido-fg);
+}
+.pedido-card .chip input:checked + span {
+  border-color: var(--pedido-fg);
+}
+.pedido-card .chip input:hover + span {
+  border-color: var(--pedido-fg);
+  box-shadow: 0 0 0 2px rgba(224, 122, 154, 0.55);
+}
+.pedido-card .chip input:focus-visible + span { outline-color: var(--pedido-fg); }
+
+.pedido-fechar,
+.pedido-tema {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.pedido-fechar:focus-visible,
+.pedido-tema:focus-visible { outline: 3px solid var(--btn-primary-bg); outline-offset: 3px; }
+
+/* ---------- Ícones em emoji (❌ / ☀️ / 🌙), centralizados no círculo ---------- */
+.pedido-fechar .emo,
+.pedido-tema .emo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  font-size: 1.25rem;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  transition: transform 0.25s ease;
+}
+.pedido-fechar .emo { font-size: 1rem; }
+.pedido-fechar:hover .emo,
+.pedido-tema:hover .emo { transform: scale(1.15); }
+.pedido-tema .icon-lua { display: none; }
+[data-theme="dark"] .pedido-tema .icon-sol { display: none; }
+[data-theme="dark"] .pedido-tema .icon-lua { display: flex; }
+@media (max-width: 860px) {
+  .pedido-tema .emo { font-size: 1.1rem; }
+  .pedido-fechar .emo { font-size: 0.9rem; }
+}

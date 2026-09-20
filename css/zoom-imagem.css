@@ -1,0 +1,141 @@
+/* Trava de scroll da página (usada pelos modais). Corrige o bug em que
+   overflow:hidden sozinho no body deixava o fundo rolando/travando no
+   celular: aqui a página é fixada no lugar e a posição é restaurada
+   ao fechar. */
+body.scroll-travado {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Visualizador de foto em TELA CHEIA (desktop e celular).
+   Cobre a janela inteira, com botão "Fechar" bem visível e área de toque grande. */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: #000;
+  overflow: hidden;
+}
+.zoom-overlay[hidden] { display: none; }
+
+/* Faixa preta no topo por trás do botão "Fechar" e do contador, com uma
+   linha de baixo bem definida — separa a área dos controles da foto,
+   em vez dos botões ficarem soltos e se confundindo com outros elementos
+   por baixo (ex.: o botão de fechar da tela de pedido). */
+.zoom-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: max(72px, calc(env(safe-area-inset-top, 0px) + 60px));
+  background: #000;
+  border-bottom: 3px solid #000;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.zoom-palco {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none; /* o gesto é tratado no JS (arrastar, deslizar, tocar) */
+}
+.zoom-img {
+  max-width: none;
+  max-height: none;
+  flex-shrink: 0;
+  object-fit: contain;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform;
+}
+.zoom-overlay.ampliado .zoom-img { cursor: grab; }
+
+.zoom-fechar,
+.zoom-nav {
+  position: absolute;
+  z-index: 3;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  background: rgba(30, 30, 30, 0.72);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.zoom-fechar:hover,
+.zoom-nav:hover { background: rgba(255, 255, 255, 0.24); border-color: #fff; }
+.zoom-fechar:focus-visible,
+.zoom-nav:focus-visible { outline: 3px solid var(--medallion-gold, #D4A017); outline-offset: 2px; }
+
+.zoom-fechar {
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  height: 46px;
+  padding: 0 1.1em;
+  gap: 0.5em;
+  border-radius: 999px;
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+.zoom-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+.zoom-prev { left: max(14px, env(safe-area-inset-left)); }
+.zoom-next { right: max(14px, env(safe-area-inset-right)); }
+
+.zoom-contador {
+  position: absolute;
+  z-index: 3;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  height: 46px;
+  padding: 0 1.1em;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(30, 30, 30, 0.72);
+  color: #fff;
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.9rem;
+}
+.zoom-contador[hidden] { display: none; }
+
+.zoom-dica {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.8rem;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.zoom-overlay.ampliado .zoom-dica,
+.zoom-overlay.ampliado .zoom-nav { opacity: 0; pointer-events: none; }
+
+@media (max-width: 640px) {
+  .zoom-nav { width: 44px; height: 44px; font-size: 1.6rem; }
+  .zoom-dica { font-size: 0.75rem; padding: 0 1rem; }
+}
