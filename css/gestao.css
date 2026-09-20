@@ -1,10 +1,12 @@
 .gestao-header {
-  background: var(--velvet);
-  color: var(--bone);
+  background: var(--section-bg); /* branco no modo claro, preto no escuro */
+  color: var(--ink);
   padding: var(--space-4) 0 var(--space-3);
   text-align: center;
 }
-.gestao-header h1 { color: var(--bone); }
+.gestao-header h1 { color: var(--ink); }
+.gestao-header .eyebrow, .gestao-header .eyebrow.on-dark { color: var(--ink); }
+.gestao-header .eyebrow::before, .gestao-header .eyebrow.on-dark::before { background: var(--ink); }
 .gestao-header .eyebrow { justify-content: center; }
 
 .portao {
@@ -191,7 +193,7 @@
 .ped-secao-cab p { flex-basis: 100%; margin: 0; font-size: 0.86rem; color: var(--muted); }
 .ped-contagem { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 0.6em; border-radius: 999px; background: var(--gold-dim); color: var(--page-bg); font-weight: 600; font-size: 0.9rem; }
 
-.ped-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.1rem; align-items: start; }
+.ped-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); grid-auto-rows: 1fr; gap: 1.1rem; align-items: stretch; }
 .ped-vazio { grid-column: 1 / -1; margin: 0; padding: 1.6rem 1rem; text-align: center; font-size: 0.88rem; color: var(--muted); border: 1px dashed var(--ped-borda); border-radius: 16px; }
 
 /* cartão do pedido */
@@ -203,14 +205,16 @@
 .ped-card-topo { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
 .ped-avatar { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #e07a9a, #7a2142); color: #fff; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.03em; }
 .ped-cliente { flex: 1 1 auto; min-width: 0; }
-.ped-cliente h3 { margin: 0; font-family: var(--font-display, inherit); font-size: 1.3rem; line-height: 1.15; overflow-wrap: anywhere; }
-.ped-quando { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: var(--muted); }
+.ped-cliente h3 { margin: 0; font-family: var(--font-display, inherit); font-size: 1.3rem; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ped-quando { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ped-card-topo { height: 3.9rem; flex: 0 0 auto; }
 
-.ped-itens { list-style: none; margin: 0; padding: 0; }
+/* Tamanho fixo: o que o cliente digita nunca estica o cartão. Texto longo é cortado (o texto inteiro aparece ao passar o mouse) e a lista de peças rola. */
+.ped-itens { list-style: none; margin: 0; padding: 0 0.2rem 0 0; height: 8.6rem; overflow-y: auto; scrollbar-width: thin; }
 .ped-itens li { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; padding: 0.6rem 0; border-bottom: 1px dashed var(--ped-borda); font-size: 0.9rem; }
 .ped-item-txt { display: flex; flex-direction: column; min-width: 0; }
-.ped-item-nome { font-weight: 500; overflow-wrap: anywhere; }
-.ped-item-det { font-size: 0.78rem; color: var(--muted); }
+.ped-item-nome { font-weight: 500; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ped-item-det { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ped-itens li strong { white-space: nowrap; font-size: 0.92rem; }
 
 .ped-total { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 0.8rem 0 0.9rem; padding: 0.75rem 1rem; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #7a2142, #b0416b); box-shadow: 0 8px 20px rgba(122, 33, 66, 0.25); }
@@ -219,17 +223,23 @@
 .ped-card.confirmado .ped-total { background: linear-gradient(135deg, #3f6e55, #5B8A72); box-shadow: 0 8px 20px rgba(63, 110, 85, 0.25); }
 
 .ped-info { margin-bottom: 0.9rem; }
+.ped-info p { min-height: 2.5em; }
+.ped-info p.vazio { opacity: 0.55; }
 .ped-info p { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0 0 0.4rem; font-size: 0.85rem; }
 .ped-info svg { flex: 0 0 auto; margin-top: 0.15em; color: var(--gold-dim); }
-.ped-info span { min-width: 0; overflow-wrap: anywhere; }
+.ped-info span { min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
 
-/* botão de WhatsApp em destaque */
-.ped-whats { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem; border-radius: 999px; background: #25D366; color: #073b1d; border: 2px solid #073b1d; text-decoration: none; transition: transform .15s, background .15s, box-shadow .15s; }
-.ped-whats:hover { background: #1fb957; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 211, 102, 0.35); }
-.ped-whats svg { flex: 0 0 auto; }
-.ped-whats-txt { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.ped-whats-txt strong { font-size: 0.92rem; }
-.ped-whats-txt small { font-size: 0.78rem; opacity: 0.85; }
+/* contatos: WhatsApp e e-mail com os ícones oficiais */
+.ped-contatos { display: flex; flex-direction: column; gap: 0.5rem; margin-top: auto; }
+.ped-contato { display: flex; align-items: center; gap: 0.8rem; height: 3.4rem; padding: 0 1rem 0 0.7rem; border-radius: 999px; background: #fff; color: #3a1420; border: 2px solid #3a1420; text-decoration: none; transition: transform .15s, background .15s, box-shadow .15s; }
+.ped-contato img { flex: 0 0 auto; width: 30px; height: 30px; display: block; }
+.ped-contato-txt { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.ped-contato-txt strong { font-size: 0.9rem; }
+.ped-contato-txt small { font-size: 0.78rem; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a.ped-whats:hover { background: #e7f8ee; border-color: #1e9e50; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(37, 211, 102, 0.3); }
+a.ped-mail:hover { background: #fdeceb; border-color: #c0392b; transform: translateY(-1px); box-shadow: 0 8px 18px rgba(192, 57, 43, 0.22); }
+.ped-contato.sem { background: transparent; border: 1px dashed var(--ped-borda); color: var(--ink); opacity: 0.6; cursor: default; }
+.ped-contato.sem img { filter: grayscale(1); opacity: 0.7; }
 
 .ped-risco { display: flex; justify-content: center; padding-top: 1.2rem; border-top: 1px dashed var(--ped-borda); }
 .ped-risco .btn { padding: 0.55em 1.2em; font-size: 0.82rem; opacity: 0.85; }
@@ -249,4 +259,3 @@
 @media (max-width: 380px) {
   .ped-kpis { grid-template-columns: minmax(0, 1fr); }
 }
-.ped-info a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
