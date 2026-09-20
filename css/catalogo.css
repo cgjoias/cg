@@ -238,10 +238,47 @@
 .detalhe-info .btn { width: 100%; }
 
 /* Botão Fechar: pílula "✕ Fechar", fixa no canto (não some ao rolar no celular) */
-.lightbox-fechar {
+/* Grupo fixo no canto: [tema] [Fechar] */
+.lightbox-acoes {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));
   right: max(14px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 5;
+}
+.lightbox-tema {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--divider-color);
+  background: var(--section-bg);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.lightbox-tema:hover { background: var(--bone-2); }
+.lightbox-tema:active { transform: scale(0.92); }
+.lightbox-tema .emo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.2rem;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
+.lightbox-tema .icon-lua { display: none; }
+[data-theme="dark"] .lightbox-tema .icon-sol { display: none; }
+[data-theme="dark"] .lightbox-tema .icon-lua { display: flex; }
+.lightbox-fechar {
+  position: static;
   height: 46px;
   padding: 0 1.2em;
   gap: 0.5em;
@@ -257,7 +294,6 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease, color 0.2s ease;
-  z-index: 5;
 }
 .lightbox-fechar:hover { background: var(--ink); color: var(--section-bg); }
 .lightbox-nav {
@@ -338,8 +374,9 @@
 /* Celular: cabeçalho, medidas e botões mais compactos para tudo caber sem rolar */
 @media (max-width: 760px) {
   .lightbox-fechar { height: 40px; padding: 0 0.9em; font-size: 0.88rem; }
+  .lightbox-tema { width: 40px; height: 40px; }
   .ampliar-foto {
-    position: fixed;
+    position: fixed; /* fixo no topo, alinhado com o tema e o Fechar, mesmo rolando */
     top: max(14px, env(safe-area-inset-top));
     left: max(14px, env(safe-area-inset-left));
     bottom: auto;
@@ -361,7 +398,7 @@
   .detalhe-spec-linha { font-size: 0.8rem; padding: 0; gap: 0.4em; }
   .detalhe-tamanhos { margin-bottom: 0.5rem; }
   .detalhe-tamanhos-grupo { margin-bottom: 0.3rem; }
-  .detalhe-descricao { -webkit-line-clamp: 2; font-size: 0.82rem; margin-bottom: 0.6rem; }
+  .detalhe-descricao { display: block; overflow: visible; font-size: 0.9rem; margin-bottom: 0.6rem; } /* texto completo, sem cortar */
   .detalhe-info-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .detalhe-info .btn { padding: 0.7em 0.6em; font-size: 0.85rem; }
   .detalhe-info .btn-sacola { margin-top: 0; } /* só no painel de detalhes (ele usa grid com gap) */
@@ -373,3 +410,29 @@
 
 /* Modo escuro: borda do botão "Pedir esta peça" do painel em branco (a preta sumiria no fundo preto) */
 [data-theme="dark"] .detalhe-info .btn-primary { border-color: var(--divider-color); }
+
+/* ---------- Celular: o painel de detalhes ROLA ----------
+   Foto no topo, informações completas embaixo, e os botões "Pedir esta peça" /
+   "Adicionar à sacola" ficam sempre visíveis no rodapé da tela. Vem no fim do
+   arquivo de propósito, pra vencer as regras anteriores. */
+@media (max-width: 760px) {
+  .detalhe-painel {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .detalhe-foto { height: 50vh; height: 50dvh; }
+  .detalhe-info { max-height: none; overflow: visible; }
+  .detalhe-info-conteudo { margin: 0; }
+  .detalhe-info-acoes {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: var(--surface);
+    padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom));
+    margin-top: 0.4rem;
+    border-top: 1px solid var(--bone-2);
+  }
+  [data-theme="dark"] .detalhe-info-acoes { background: #000; }
+}

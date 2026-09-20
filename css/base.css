@@ -423,7 +423,7 @@ footer.site-footer .foot-bottom {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1.5px solid #000;
+  border: 2px solid #000; /* mesma grossura do botão ☰ */
   background: transparent;
   color: #1a1a1a;
   cursor: pointer;
