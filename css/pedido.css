@@ -555,3 +555,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
     grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
   }
 }
+
+/* O valor já aparece nos botões Par / Unidade / Trio e no select "Peça desejada":
+   não repete embaixo do nome da peça. */
+.pedido-media-preco { display: none !important; }
