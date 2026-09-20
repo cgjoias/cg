@@ -34,6 +34,7 @@
     { k: "ativo", t: "Mostrar no site (Sim/Não)", w: 14 },
   ];
   const ROTULO = Object.fromEntries(COLUNAS.map((c) => [c.k, c.t.replace(/ \(.*\)/, "")]));
+  ROTULO.foto = "Foto";
 
   let produtos = [];
   let ed = null; // estado do editor aberto
@@ -158,15 +159,101 @@
     const filtrados = produtos.filter((p) => !termo || norm(p.nome).includes(termo) || norm(p.codigo).includes(termo));
     lista.innerHTML = filtrados.map((p) => {
       const foto = (p.imagens && p.imagens[0]) || "assets/img/marca/logo.jpg";
-      return `<article class="prod-card${p.ativo ? "" : " oculto"}" data-id="${esc(p.id)}" tabindex="0" role="button">
+      return `<article class="prod-card${p.ativo ? " confirmado" : " oculto"}" data-id="${esc(p.id)}" tabindex="0" role="button">
         <div class="prod-thumb"><img src="${esc(foto)}" alt="" loading="lazy"></div>
         <div class="prod-info">
           <h3>${esc(p.nome)}</h3>
           <p class="prod-sub">${esc(CATEGORIAS[p.categoria] || p.categoria)} · ${moeda(p.preco)}</p>
-          <p class="prod-sub">${(p.imagens || []).length} foto(s)${p.ativo ? "" : ' · <span class="status-tag status-pendente">Oculto</span>'}</p>
+          <p class="prod-sub">${(p.imagens || []).length} foto(s) · ${p.ativo ? '<span class="status-tag status-confirmado">✓ Confirmado</span>' : '<span class="status-tag status-pendente">Aguardando confirmação</span>'}</p>
+          <button type="button" class="prod-conf" data-conf="${esc(p.id)}">${p.ativo ? "Desfazer confirmação" : "✓ Confirmar"}</button>
         </div>
       </article>`;
     }).join("") || (produtos.length ? "<p>Nenhuma peça encontrada.</p>" : "");
+    atualizarBotaoConfirmarTudo();
+  }
+
+  function atualizarBotaoConfirmarTudo() {
+    const b = $("prod-confirmar-tudo");
+    if (!b) return;
+    const aguardando = produtos.filter((p) => !p.ativo).length;
+    b.textContent = aguardando ? `Confirmar tudo (${aguardando})` : "Confirmar tudo";
+    b.disabled = !aguardando;
+  }
+
+  // ---------- confirmar (= "Mostrar no site") ----------
+  // Peça confirmada aparece no site e fica com a borda preta aqui no painel.
+  // Peça aguardando confirmação fica oculta do site (é como as importações da planilha chegam).
+  async function alternarConfirmacao(id) {
+    const p = produtos.find((x) => x.id === id);
+    if (!p) return;
+    const novo = !p.ativo;
+    if (novo && !(Number(p.preco) > 0) && !confirm(`"${p.nome}" está com preço R$ 0,00 e vai aparecer assim no site. Confirmar mesmo assim?`)) return;
+    const { data, error } = await db.from("produtos").update({ ativo: novo, updated_at: new Date().toISOString() }).eq("id", id).select();
+    if (error || !data || !data.length) {
+      aviso("Não foi possível alterar: " + (error ? error.message : "sua sessão pode ter expirado. Saia e entre de novo."), "erro");
+      return;
+    }
+    p.ativo = novo;
+    desenhar();
+  }
+
+  async function verConfirmarTudo() {
+    await carregar();
+    const aguardando = produtos.filter((p) => !p.ativo);
+    if (!aguardando.length) { aviso("Não há nada aguardando confirmação: todas as peças já estão confirmadas."); return; }
+    const semPreco = aguardando.filter((p) => !(Number(p.preco) > 0));
+    abrirModal(`
+      <h2>Confirmar tudo</h2>
+      <p><strong>${aguardando.length}</strong> peça(s) aguardando confirmação. Confirmar publica a peça no site e deixa a borda do card preta.</p>
+      ${semPreco.length ? `<p><strong>${semPreco.length}</strong> delas estão com preço <strong>R$ 0,00</strong> e apareceriam assim no site.</p>
+        <label class="prod-check"><input type="checkbox" id="conf-zerados"> Confirmar também as peças com R$ 0,00</label>` : ""}
+      <p id="conf-resumo"></p>
+      <p id="f-erro" class="prod-msg erro" hidden></p>
+      <div class="prod-botoes">
+        <button type="button" class="btn btn-primary" id="conf-aplicar">Confirmar</button>
+        <button type="button" class="btn btn-line" data-imp="cancelar">Cancelar</button>
+      </div>`);
+    const alvo = () => ($("conf-zerados") && $("conf-zerados").checked ? aguardando : aguardando.filter((p) => Number(p.preco) > 0));
+    const atualizar = () => {
+      const n = alvo().length;
+      $("conf-resumo").textContent = n ? `Serão confirmadas ${n} peça(s).` : "Nenhuma peça com preço para confirmar. Preencha os preços (pela planilha baixada ou peça por peça) ou marque a opção acima.";
+      $("conf-aplicar").textContent = n ? `Confirmar ${n} peça(s)` : "Confirmar";
+      $("conf-aplicar").disabled = !n;
+    };
+    if ($("conf-zerados")) $("conf-zerados").addEventListener("change", atualizar);
+    $("conf-aplicar").addEventListener("click", (e) => confirmarLote(e.currentTarget, alvo()));
+    atualizar();
+  }
+
+  async function confirmarLote(botao, lista) {
+    botao.disabled = true;
+    botao.textContent = "Confirmando...";
+    const ids = lista.map((p) => p.id);
+    let feitas = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const { data, error } = await db.from("produtos").update({ ativo: true, updated_at: new Date().toISOString() }).in("id", ids.slice(i, i + 100)).select();
+      if (error) {
+        botao.disabled = false;
+        botao.textContent = "Tentar de novo";
+        const el = $("f-erro");
+        el.textContent = "Erro ao confirmar: " + error.message;
+        el.hidden = false;
+        carregar();
+        return;
+      }
+      feitas += (data || []).length;
+    }
+    if (ids.length && !feitas) {
+      botao.disabled = false;
+      botao.textContent = "Tentar de novo";
+      const el = $("f-erro");
+      el.textContent = "Nada foi confirmado — sua sessão pode ter expirado. Saia e entre de novo.";
+      el.hidden = false;
+      return;
+    }
+    fecharModal();
+    aviso(`Pronto: ${feitas} peça(s) confirmada(s). O site já está atualizado.`);
+    carregar();
   }
 
   // ---------- editor ----------
@@ -354,6 +441,138 @@
     botao.disabled = false;
   }
 
+  // ---------- remover cópias repetidas ----------
+  // Peças com o mesmo código + mesmo nome são a mesma peça importada mais de uma vez.
+  // Mantém 1 de cada (a que tem preço, está visível, tem foto e é a mais antiga) e apaga
+  // as outras — passando pra que a mantida fique com a foto de uma cópia, se ela não tinha.
+  function achaDuplicados() {
+    const pontos = (p) => (Number(p.preco) > 0 ? 4 : 0) + (p.ativo ? 2 : 0) + ((p.imagens || []).length ? 1 : 0);
+    const grupos = new Map();
+    produtos.forEach((p) => {
+      if (!norm(p.codigo)) return; // sem código não dá pra ter certeza: não mexe
+      const chave = norm(p.codigo) + "|" + norm(p.nome);
+      if (!grupos.has(chave)) grupos.set(chave, []);
+      grupos.get(chave).push(p);
+    });
+    const resultado = [];
+    grupos.forEach((lista) => {
+      if (lista.length < 2) return;
+      const ordenada = [...lista].sort((a, b) => pontos(b) - pontos(a) || String(a.created_at || "").localeCompare(String(b.created_at || "")));
+      const [manter, ...apagar] = ordenada;
+      let fotoAdotada = null;
+      if (!(manter.imagens || []).length) {
+        const comFoto = apagar.find((x) => (x.imagens || []).length);
+        if (comFoto) fotoAdotada = comFoto.imagens;
+      }
+      resultado.push({ manter, apagar, fotoAdotada });
+    });
+    return resultado;
+  }
+
+  async function verDuplicados() {
+    await carregar();
+    const grupos = achaDuplicados();
+    const total = grupos.reduce((n, g) => n + g.apagar.length, 0);
+    if (!total) {
+      aviso("Não encontrei peças repetidas (mesmo código e mesmo nome).");
+      return;
+    }
+    const itens = grupos.slice(0, 40).map((g) =>
+      `<li><strong>${esc(g.manter.nome)}</strong> (${esc(g.manter.codigo)}) — ${g.apagar.length + 1} cópias, mantém 1 e apaga ${g.apagar.length}</li>`).join("");
+    abrirModal(`
+      <h2>Remover peças repetidas</h2>
+      <p>${grupos.length} peça(s) aparecem mais de uma vez. Vou manter 1 de cada e apagar <strong>${total}</strong> cópia(s) (e as fotos delas). Em cada grupo fica a cópia que tem preço, está visível e tem foto; se empatar, a mais antiga.</p>
+      <ul class="imp-lista">${itens}${grupos.length > 40 ? `<li>...e mais ${grupos.length - 40} peça(s)</li>` : ""}</ul>
+      <p id="f-erro" class="prod-msg erro" hidden></p>
+      <div class="prod-botoes">
+        <button type="button" class="btn btn-primary" id="dup-aplicar">Apagar ${total} cópia(s)</button>
+        <button type="button" class="btn btn-line" data-imp="cancelar">Cancelar</button>
+      </div>`);
+    $("dup-aplicar").addEventListener("click", (e) => removerDuplicados(e.currentTarget, grupos));
+  }
+
+  async function removerDuplicados(botao, grupos) {
+    botao.disabled = true;
+    botao.textContent = "Apagando...";
+    const erroTela = (t) => { botao.disabled = false; botao.textContent = "Tentar de novo"; const el = $("f-erro"); el.textContent = t; el.hidden = false; };
+    // 1) a peça mantida herda a foto de uma cópia, se ela não tinha nenhuma
+    for (const g of grupos.filter((x) => x.fotoAdotada)) {
+      const { error } = await db.from("produtos").update({ imagens: g.fotoAdotada, updated_at: new Date().toISOString() }).eq("id", g.manter.id);
+      if (error) return erroTela("Erro ao passar a foto: " + error.message);
+    }
+    // 2) apaga as cópias
+    const ids = grupos.flatMap((g) => g.apagar.map((x) => x.id));
+    let apagadas = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const { data, error } = await db.from("produtos").delete().in("id", ids.slice(i, i + 100)).select();
+      if (error) return erroTela("Erro ao apagar: " + error.message);
+      apagadas += (data || []).length;
+    }
+    if (!apagadas && ids.length) return erroTela("Nada foi apagado — sua sessão pode ter expirado. Saia e entre de novo.");
+    // 3) apaga do Storage as fotos das cópias (menos as que a peça mantida adotou)
+    const adotadas = new Set(grupos.flatMap((g) => g.fotoAdotada || []));
+    const fotosSoltas = grupos.flatMap((g) => g.apagar.flatMap((x) => x.imagens || [])).filter((u) => !adotadas.has(u));
+    await apagarFotos(fotosSoltas);
+    fecharModal();
+    aviso(`Pronto: ${apagadas} cópia(s) repetida(s) apagada(s). Ficou 1 de cada peça.`);
+    carregar();
+  }
+
+  // ---------- apagar tudo (recomeçar do zero) ----------
+  // Apaga todos os produtos do painel e as fotos deles no Storage. Por padrão mantém os
+  // produtos originais do site (os de data/produtos.json), pra você poder limpar só o que
+  // veio das importações de planilha. Pede pra digitar APAGAR antes.
+  async function verApagarTudo() {
+    await carregar();
+    if (!produtos.length) { aviso("Não há nenhum produto para apagar."); return; }
+    let originais = null;
+    try { originais = new Set((await (await fetch("data/produtos.json")).json()).map((p) => p.id)); } catch (e) { /* segue sem proteção */ }
+    const nOrig = originais ? produtos.filter((p) => originais.has(p.id)).length : 0;
+    abrirModal(`
+      <h2>Excluir produtos</h2>
+      <p>Hoje o painel tem <strong>${produtos.length}</strong> produto(s). Apagar é definitivo (as fotos enviadas também somem).</p>
+      ${originais
+        ? `<label class="prod-check"><input type="checkbox" id="apagar-manter" checked> Manter os ${nOrig} produto(s) originais do site (o que não veio de planilha)</label>`
+        : `<p class="prod-msg erro">Não consegui ler o data/produtos.json, então não dá pra separar os originais: <strong>tudo</strong> será apagado.</p>`}
+      <p id="apagar-resumo"></p>
+      <div class="field"><label for="apagar-confirma">Para confirmar, digite APAGAR</label><input type="text" id="apagar-confirma" autocomplete="off"></div>
+      <p id="f-erro" class="prod-msg erro" hidden></p>
+      <div class="prod-botoes">
+        <button type="button" class="btn btn-primary" id="apagar-aplicar" disabled>Apagar</button>
+        <button type="button" class="btn btn-line" data-imp="cancelar">Cancelar</button>
+      </div>`);
+    const alvo = () => ($("apagar-manter") && $("apagar-manter").checked ? produtos.filter((p) => !originais.has(p.id)) : produtos);
+    const atualizar = () => {
+      const n = alvo().length;
+      $("apagar-resumo").textContent = n ? `Serão apagados ${n} produto(s).` : "Não sobra nada para apagar com essa opção.";
+      $("apagar-aplicar").textContent = n ? `Apagar ${n} produto(s)` : "Apagar";
+      $("apagar-aplicar").disabled = !n || $("apagar-confirma").value.trim().toUpperCase() !== "APAGAR";
+    };
+    $("apagar-confirma").addEventListener("input", atualizar);
+    if ($("apagar-manter")) $("apagar-manter").addEventListener("change", atualizar);
+    $("apagar-aplicar").addEventListener("click", (e) => apagarTudo(e.currentTarget, alvo()));
+    atualizar();
+  }
+
+  async function apagarTudo(botao, lista) {
+    botao.disabled = true;
+    botao.textContent = "Apagando...";
+    const erroTela = (t) => { botao.disabled = false; botao.textContent = "Tentar de novo"; const el = $("f-erro"); el.textContent = t; el.hidden = false; };
+    const ids = lista.map((p) => p.id);
+    let apagados = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const { data, error } = await db.from("produtos").delete().in("id", ids.slice(i, i + 100)).select();
+      if (error) return erroTela("Erro ao apagar: " + error.message);
+      apagados += (data || []).length;
+    }
+    if (ids.length && !apagados) return erroTela("Nada foi apagado — sua sessão pode ter expirado. Saia e entre de novo.");
+    const fotos = lista.flatMap((p) => p.imagens || []);
+    for (let i = 0; i < fotos.length; i += 100) await apagarFotos(fotos.slice(i, i + 100));
+    fecharModal();
+    aviso(`Pronto: ${apagados} produto(s) apagado(s).`);
+    carregar();
+  }
+
   // ---------- Excel ----------
   async function carregarXLSX() {
     if (window.XLSX) return window.XLSX;
@@ -438,10 +657,12 @@
     return (a ?? "") === (b ?? "");
   };
 
-  function analisar(linhas, mapa) {
+  // chaves (opcional): chaves[i] identifica a peça da linha i na aba CATALOGO — é o que
+  // liga cada linha à foto colada no Excel (sem depender do código, que pode repetir).
+  function analisar(linhas, mapa, chaves) {
     const porId = new Map(produtos.map((p) => [p.id, p]));
     const usados = new Set();
-    const r = { alterados: [], novos: [], erros: [], iguais: 0 };
+    const r = { alterados: [], novos: [], erros: [], iguais: 0, iguaisLista: [], chaveDe: new Map(), remover: [] };
     let ordem = proximaOrdem();
     for (let i = 1; i < linhas.length; i++) {
       const l = linhas[i];
@@ -450,15 +671,16 @@
       const id = String(get("id")).trim();
       const { valores, erros } = lerCelulas(get, mapa);
       const ref = `Linha ${i + 1}`;
+      const chave = chaves ? chaves[i] : undefined;
       if (id) {
         const atual = porId.get(id);
         if (!atual) { r.erros.push(`${ref}: o ID "${id}" não existe. Não altere a coluna ID.`); continue; }
         if (erros.length) { r.erros.push(`${ref} (${atual.nome}): ${erros.join("; ")}`); continue; }
         const mudancas = Object.keys(valores).filter((k) => !igual(k, atual[k], valores[k]))
           .map((k) => ({ k, de: atual[k], para: valores[k] }));
-        if (!mudancas.length) { r.iguais++; continue; }
+        if (!mudancas.length) { r.iguais++; r.iguaisLista.push({ atual, chave }); continue; }
         const soMudou = Object.fromEntries(mudancas.map((m) => [m.k, m.para]));
-        r.alterados.push({ atual, valores: soMudou, mudancas });
+        r.alterados.push({ atual, valores: soMudou, mudancas, chave });
       } else {
         if (erros.length) { r.erros.push(`${ref}: ${erros.join("; ")}`); continue; }
         if (!valores.nome || !valores.categoria || valores.preco === undefined) {
@@ -468,7 +690,9 @@
         const novoId = gerarId(valores.nome, usados);
         usados.add(novoId);
         const agora = new Date().toISOString();
-        r.novos.push({ ...linhaVazia(), ...valores, id: novoId, ordem: ordem++, ativo: valores.ativo ?? false, created_at: agora, updated_at: agora });
+        const novo = { ...linhaVazia(), ...valores, id: novoId, ordem: ordem++, ativo: valores.ativo ?? false, created_at: agora, updated_at: agora };
+        r.novos.push(novo);
+        if (chave !== undefined) r.chaveDe.set(novo, chave);
       }
     }
     return r;
@@ -476,6 +700,7 @@
 
   function formatarValor(k, v) {
     if (k === "preco") return moeda(v);
+    if (k === "foto") return `${v} foto(s)`;
     if (k === "ativo") return v ? "Sim" : "Não";
     if (k === "categoria") return CATEGORIAS[v] || v;
     if (LISTAS.includes(k)) return txtLista(v) || "(vazio)";
@@ -584,6 +809,7 @@
       const inicio = idx > 0 ? posicoes[idx - 1].linha + 1 : Math.max(0, p.linha - 30);
       const bloco = aoa.slice(inicio, p.linha + 1);
       produtos.push({
+        linha: p.linha,
         codigo: p.codigo,
         nome: catalogoGetNome(bloco),
         acabamento: catalogoGetField(bloco, "Acabamento"),
@@ -598,28 +824,85 @@
     return { produtos, posicoes };
   }
 
+  // Liga cada peça da planilha de estoque a uma peça que JÁ existe no site (pelo código +
+  // nome; se o nome foi mudado, só pelo código quando ele é único). É isso que impede que
+  // cada importação crie tudo de novo. Se houver cópias repetidas no site, escolhe a
+  // "melhor" (com preço, visível, com foto, mais antiga) — as outras saem em "Remover duplicados".
+  function casarComExistentes(catalogo) {
+    const pontos = (p) => (Number(p.preco) > 0 ? 4 : 0) + (p.ativo ? 2 : 0) + ((p.imagens || []).length ? 1 : 0);
+    const melhor = (a, b) => pontos(b) - pontos(a) || String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    const codigosNaPlanilha = {};
+    catalogo.forEach((p) => { const c = norm(p.codigo); codigosNaPlanilha[c] = (codigosNaPlanilha[c] || 0) + 1; });
+    const usados = new Set();
+    const casados = new Map(); // linha da peça -> produto já existente
+    catalogo.forEach((p) => {
+      const cod = norm(p.codigo), nome = norm(p.nome);
+      const livres = produtos.filter((x) => !usados.has(x.id));
+      let cand = livres.filter((x) => cod && norm(x.codigo) === cod && norm(x.nome) === nome);
+      if (!cand.length) cand = livres.filter((x) => nome && norm(x.nome) === nome);
+      if (!cand.length && cod && codigosNaPlanilha[cod] === 1) cand = livres.filter((x) => norm(x.codigo) === cod);
+      if (!cand.length) return;
+      const escolhido = cand.sort(melhor)[0];
+      usados.add(escolhido.id);
+      casados.set(p.linha, escolhido);
+    });
+    return casados;
+  }
+
   // Converte a planilha de Controle de Estoque/Vendas (abas CATALOGO + ESTOQUE) para o
   // formato { linhas, mapa } que analisar() já sabe processar, como se fosse a planilha
   // baixada pelo botão "Baixar planilha".
+  // Peça que já existe no site entra com o ID dela e SEM categoria/material/preço/descrição/
+  // "mostrar no site" (a planilha de estoque não tem esses dados; célula vazia = mantém) —
+  // assim reimportar nunca zera o preço nem esconde uma peça que você já ajustou. O resto
+  // (nome, código, cor, pedra, largura, formato, acabamento, detalhes, numerações, foto)
+  // segue a planilha.
   function converterPlanilhaOriginal(X, wb) {
     const { produtos: catalogo, posicoes } = extrairCatalogo(X, wb);
     if (!catalogo.length) return null;
     const estoque = extrairEstoque(X, wb);
+    const casados = casarComExistentes(catalogo);
     const mapa = {};
     COLUNAS.forEach((c, i) => (mapa[c.k] = i));
     const linhas = [COLUNAS.map((c) => c.t)];
+    const chaves = [undefined]; // chaves[i] = linha da peça na aba CATALOGO (liga à foto)
     catalogo.forEach((p) => {
       const est = buscaEstoque(estoque, p.codigo) || {};
       const detalhes = [p.detalhes, p.conforto ? `Conforto: ${p.conforto}` : ""].filter(Boolean).join(" · ");
+      const existente = casados.get(p.linha);
       const porChave = {
-        id: "", nome: p.nome, categoria: "Anéis", material: "Aço Cirúrgico", preco: 0,
+        id: existente ? existente.id : "",
+        nome: p.nome,
+        categoria: existente ? "" : "Anéis",
+        material: existente ? "" : "Aço Cirúrgico",
+        preco: existente ? "" : 0,
         descricao: "", codigo: p.codigo, cor: p.cor, pedra: p.pedra, largura: p.largura,
         formato: p.formato, acabamento: p.acabamento, detalhes,
-        tamanhos: est.tamanhos || "", tamanhos_feminino: "", tamanhos_masculino: "", ativo: "Não",
+        tamanhos: est.tamanhos || "", tamanhos_feminino: "", tamanhos_masculino: "",
+        ativo: existente ? "" : "Não",
       };
       linhas.push(COLUNAS.map((c) => porChave[c.k]));
+      chaves.push(p.linha);
     });
-    return { linhas, mapa, posicoes, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+    return { linhas, mapa, chaves, posicoes, casados, qtdJaExistiam: casados.size, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+  }
+
+  // Peça que já existe, não mudou em nada, mas ganhou foto nova no Excel: conta como
+  // alteração (senão nunca receberia a foto). Também anota a foto nas peças que já mudam.
+  function incluirFotosNaPrevia(r) {
+    if (!imagensPendentes) return;
+    const fotosDe = (chave) => (chave !== undefined && imagensPendentes[chave]) || [];
+    r.iguaisLista.forEach(({ atual, chave }) => {
+      const fotos = fotosDe(chave);
+      if ((atual.imagens || []).length || !fotos.length) return;
+      r.alterados.push({ atual, valores: {}, mudancas: [{ k: "foto", de: 0, para: fotos.length }], chave });
+      r.iguais--;
+    });
+    r.alterados.forEach((a) => {
+      const fotos = fotosDe(a.chave);
+      if (!fotos.length || (a.atual.imagens || []).length || a.mudancas.some((m) => m.k === "foto")) return;
+      a.mudancas.push({ k: "foto", de: 0, para: fotos.length });
+    });
   }
 
   // ---------- imagens embutidas no .xlsx (aba CATALOGO) ----------
@@ -742,7 +1025,7 @@
       const ext = (mediaPath.split(".").pop() || "jpg").toLowerCase();
       const mime = ext === "png" ? "image/png" : ext === "gif" ? "image/gif" : ext === "webp" ? "image/webp" : "image/jpeg";
       const bytes = await arq.async("uint8array");
-      (resultado[posicao.codigo] ||= []).push(new Blob([bytes], { type: mime }));
+      (resultado[posicao.linha] ||= []).push(new Blob([bytes], { type: mime }));
     }
     return resultado;
   }
@@ -767,19 +1050,25 @@
       if (mapa.id === undefined) {
         const original = converterPlanilhaOriginal(X, wb);
         if (!original) throw new Error('Não encontrei a coluna "ID" nem as abas CATALOGO/ESTOQUE. Use a planilha baixada pelo botão "Baixar planilha", ou a sua planilha de Controle de Estoque/Vendas original.');
-        pendente = analisar(original.linhas, original.mapa);
+        pendente = analisar(original.linhas, original.mapa, original.chaves);
         let avisoFotos = "", falhaFotos = false;
         try {
           imagensPendentes = await extrairImagensCatalogo(buffer, original.posicoes);
           const qtdFotos = Object.keys(imagensPendentes).length;
-          avisoFotos = qtdFotos ? ` — ${qtdFotos} peça(s) com foto encontrada no Excel, enviadas automaticamente ao aplicar` : " — não encontrei fotos coladas na aba CATALOGO desta planilha";
+          avisoFotos = qtdFotos ? ` — ${qtdFotos} peça(s) com foto encontrada no Excel, enviadas automaticamente ao aplicar (só pra quem ainda não tem foto)` : " — não encontrei fotos coladas na aba CATALOGO desta planilha";
         } catch (erroFotos) {
           imagensPendentes = {};
           falhaFotos = true;
           avisoFotos = ` — não consegui ler as fotos do Excel automaticamente (${erroFotos.message || erroFotos}); as peças serão importadas sem foto`;
         }
+        incluirFotosNaPrevia(pendente);
+        // A planilha manda: tudo que está no painel e NÃO está nela (inclusive cópias
+        // repetidas de importações antigas) entra na lista pra ser removido.
+        const idsNaPlanilha = new Set([...original.casados.values()].map((x) => x.id));
+        pendente.remover = produtos.filter((x) => !idsNaPlanilha.has(x.id));
         mostrarPrevia(pendente);
-        aviso(`Planilha de controle de estoque reconhecida${avisoFotos}: peças cadastradas como Anéis, preço 0 e ocultas do site até você preencher o preço real e marcar "Mostrar no site" em cada uma.`, falhaFotos ? "erro" : "ok");
+        const ja = original.qtdJaExistiam || 0;
+        aviso(`Planilha de controle de estoque reconhecida${avisoFotos}. O painel vai ficar igual à planilha: ${original.linhas.length - 1} peça(s) — ${ja} já existem (atualizadas, sem duplicar), ${pendente.novos.length} nova(s) e ${pendente.remover.length} a remover. Preço e visibilidade das que já existem ficam como estão; as novas entram como Anéis, preço 0 e aguardando confirmação (ocultas do site até você confirmar).`, falhaFotos ? "erro" : "ok");
         return;
       }
       pendente = analisar(linhas, mapa);
@@ -790,30 +1079,46 @@
   }
 
   function mostrarPrevia(r) {
-    const total = r.alterados.length + r.novos.length;
+    const remover = r.remover || [];
     const alterados = r.alterados.map((a) => `<li><strong>${esc(a.atual.nome)}</strong><br>${a.mudancas.map((m) =>
       `${esc(ROTULO[m.k])}: ${esc(formatarValor(m.k, m.de))} → <b>${esc(formatarValor(m.k, m.para))}</b>`).join("<br>")}</li>`).join("");
     const novos = r.novos.map((n) => {
-      const temFoto = imagensPendentes && imagensPendentes[n.codigo] && imagensPendentes[n.codigo].length;
-      return `<li><strong>${esc(n.nome)}</strong> · ${esc(CATEGORIAS[n.categoria])} · ${moeda(n.preco)}${temFoto ? " · 📷 foto encontrada" : ""}${n.ativo ? "" : " · <em>ficará oculto até você marcar Sim em “Mostrar no site”</em>"}</li>`;
+      const chave = r.chaveDe && r.chaveDe.get(n);
+      const temFoto = imagensPendentes && chave !== undefined && imagensPendentes[chave] && imagensPendentes[chave].length;
+      return `<li><strong>${esc(n.nome)}</strong> · ${esc(CATEGORIAS[n.categoria])} · ${moeda(n.preco)}${temFoto ? " · 📷 foto encontrada" : ""}${n.ativo ? "" : " · <em>entra aguardando confirmação (oculta do site)</em>"}</li>`;
     }).join("");
+    const removidos = remover.slice(0, 60).map((p) => `<li><strong>${esc(p.nome)}</strong>${p.codigo ? ` · ${esc(p.codigo)}` : ""}${Number(p.preco) > 0 ? ` · ${moeda(p.preco)}` : ""}</li>`).join("")
+      + (remover.length > 60 ? `<li>...e mais ${remover.length - 60} produto(s)</li>` : "");
     const erros = r.erros.map((e) => `<li>${esc(e)}</li>`).join("");
     abrirModal(`
       <h2>Prévia da importação</h2>
-      <p>${r.alterados.length} para alterar · ${r.novos.length} novo(s) · ${r.iguais} sem mudança · ${r.erros.length} com problema</p>
+      <p>${r.alterados.length} para alterar · ${r.novos.length} novo(s) · ${r.iguais} sem mudança · ${remover.length} a remover · ${r.erros.length} com problema</p>
+      ${remover.length ? `<h3>Não estão na planilha</h3>
+        <label class="prod-check"><input type="checkbox" id="imp-remover" checked> Remover do painel os ${remover.length} produto(s) abaixo (o painel fica igual à planilha; cópias repetidas incluídas)</label>
+        <ul class="imp-lista erro">${removidos}</ul>` : ""}
       ${r.alterados.length ? `<h3>Alterações</h3><ul class="imp-lista">${alterados}</ul>` : ""}
-      ${r.novos.length ? `<h3>Novos produtos</h3><p class="field-hint">Ficam sem foto até você enviar pela tela da peça.</p><ul class="imp-lista">${novos}</ul>` : ""}
+      ${r.novos.length ? `<h3>Novos produtos</h3><p class="field-hint">Quem tem 📷 recebe a foto do Excel ao aplicar; as demais ficam sem foto até você enviar pela tela da peça.</p><ul class="imp-lista">${novos}</ul>` : ""}
       ${r.erros.length ? `<h3>Linhas ignoradas</h3><ul class="imp-lista erro">${erros}</ul>` : ""}
       <p id="f-erro" class="prod-msg erro" hidden></p>
       <div class="prod-botoes">
-        <button type="button" class="btn btn-primary" id="imp-aplicar"${total ? "" : " disabled"}>Aplicar ${total ? total + " alteração(ões)" : ""}</button>
+        <button type="button" class="btn btn-primary" id="imp-aplicar">Aplicar</button>
         <button type="button" class="btn btn-line" data-imp="cancelar">Cancelar</button>
       </div>`);
+    const atualizarBotao = () => {
+      const marcado = !!($("imp-remover") && $("imp-remover").checked);
+      const total = r.alterados.length + r.novos.length + (marcado ? remover.length : 0);
+      $("imp-aplicar").disabled = !total;
+      $("imp-aplicar").textContent = total ? `Aplicar ${total} alteração(ões)` : "Aplicar";
+    };
+    if ($("imp-remover")) $("imp-remover").addEventListener("change", atualizarBotao);
+    atualizarBotao();
     $("imp-aplicar").addEventListener("click", aplicarPlanilha);
   }
 
   async function aplicarPlanilha(evento) {
     const botao = evento.currentTarget;
+    const removerMarcado = !!($("imp-remover") && $("imp-remover").checked);
+    const paraRemover = removerMarcado ? (pendente.remover || []) : [];
     botao.disabled = true;
     botao.textContent = "Aplicando...";
 
@@ -823,7 +1128,7 @@
     if (imagensPendentes && Object.keys(imagensPendentes).length) {
       let enviadas = 0;
       for (const novo of pendente.novos) {
-        const fotos = novo.codigo && imagensPendentes[novo.codigo];
+        const fotos = imagensPendentes[pendente.chaveDe.get(novo)];
         if (!fotos || !fotos.length || (novo.imagens && novo.imagens.length)) continue;
         botao.textContent = `Enviando fotos (${++enviadas})...`;
         try {
@@ -833,8 +1138,7 @@
         } catch (e) { falhasFoto++; primeiroErroFoto = primeiroErroFoto || (e.message || String(e)); }
       }
       for (const alt of pendente.alterados) {
-        const codigo = alt.valores.codigo || alt.atual.codigo;
-        const fotos = codigo && imagensPendentes[codigo];
+        const fotos = alt.chave !== undefined && imagensPendentes[alt.chave];
         const jaTemFoto = (alt.atual.imagens && alt.atual.imagens.length) || (alt.valores.imagens && alt.valores.imagens.length);
         if (!fotos || !fotos.length || jaTemFoto) continue;
         botao.textContent = `Enviando fotos (${++enviadas})...`;
@@ -863,8 +1167,29 @@
         return;
       }
     }
+    // Tira do painel o que não está na planilha (só depois de gravar o resto com sucesso).
+    let removidos = 0, erroRemocao = "";
+    if (paraRemover.length) {
+      botao.textContent = "Removendo o que não está na planilha...";
+      const ids = paraRemover.map((p) => p.id);
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data, error } = await db.from("produtos").delete().in("id", ids.slice(i, i + 100)).select();
+        if (error) { erroRemocao = error.message; break; }
+        removidos += (data || []).length;
+      }
+      if (!erroRemocao && ids.length && !removidos) erroRemocao = "nada foi apagado (sessão expirada?)";
+      if (removidos) {
+        const apagadosIds = new Set(ids);
+        const emUso = new Set([...produtos.filter((p) => !apagadosIds.has(p.id)), ...linhas].flatMap((p) => p.imagens || []));
+        const fotosSoltas = paraRemover.flatMap((p) => p.imagens || []).filter((u) => !emUso.has(u));
+        for (let i = 0; i < fotosSoltas.length; i += 100) await apagarFotos(fotosSoltas.slice(i, i + 100));
+      }
+    }
     fecharModal();
-    aviso(`Pronto: ${pendente.alterados.length} atualizado(s), ${pendente.novos.length} novo(s). O site já está atualizado.${falhasFoto ? ` (${falhasFoto} foto(s) não subiram: ${primeiroErroFoto})` : ""}`, falhasFoto ? "erro" : undefined);
+    const problemas = [];
+    if (falhasFoto) problemas.push(`${falhasFoto} foto(s) não subiram: ${primeiroErroFoto}`);
+    if (erroRemocao) problemas.push(`não consegui remover o que sobrou fora da planilha: ${erroRemocao}`);
+    aviso(`Pronto: ${pendente.alterados.length} atualizado(s), ${pendente.novos.length} novo(s)${paraRemover.length ? `, ${removidos} removido(s)` : ""}. O site já está atualizado.${problemas.length ? ` (${problemas.join("; ")})` : ""}`, problemas.length ? "erro" : undefined);
     pendente = null;
     imagensPendentes = null;
     carregar();
@@ -922,6 +1247,13 @@
 }
 .prod-card:hover, .prod-card:focus-visible { border-color: var(--gold-dim); outline: none; transform: translateY(-1px); }
 .prod-card.oculto { opacity: 0.6; }
+/* Confirmado (aparece no site): borda preta */
+.prod-card.confirmado, .prod-card.confirmado:hover, .prod-card.confirmado:focus-visible { border-color: #000; box-shadow: 0 0 0 1px #000; }
+[data-theme="dark"] .prod-card.confirmado, [data-theme="dark"] .prod-card.confirmado:hover, [data-theme="dark"] .prod-card.confirmado:focus-visible { border-color: #fff; box-shadow: 0 0 0 1px #fff; }
+.status-confirmado { background: #000; color: #fff; }
+[data-theme="dark"] .status-confirmado { background: #fff; color: #000; }
+.prod-conf { margin-top: 0.4rem; padding: 0.25em 0.9em; font-family: var(--font-body); font-size: 0.78rem; border-radius: 999px; border: 1px solid var(--gold-dim); background: transparent; color: var(--ink); cursor: pointer; }
+.prod-conf:hover { background: var(--gold-light); }
 .prod-thumb { flex: 0 0 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--bone-2); border: 2px solid var(--medallion-gold); }
 .prod-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prod-info { min-width: 0; }
@@ -999,13 +1331,38 @@
     $("prod-novo").addEventListener("click", () => abrirEditor(null));
     $("prod-baixar").addEventListener("click", baixarPlanilha);
     $("prod-importar").addEventListener("click", () => $("prod-arquivo").click());
+    const btnConf = document.createElement("button");
+    btnConf.type = "button";
+    btnConf.id = "prod-confirmar-tudo";
+    btnConf.className = "btn btn-line";
+    btnConf.textContent = "Confirmar tudo";
+    $("prod-importar").after(btnConf);
+    btnConf.addEventListener("click", verConfirmarTudo);
+    const btnDup = document.createElement("button");
+    btnDup.type = "button";
+    btnDup.id = "prod-duplicados";
+    btnDup.className = "btn btn-line";
+    btnDup.textContent = "Remover duplicados";
+    btnConf.after(btnDup);
+    btnDup.addEventListener("click", verDuplicados);
+    const btnApagar = document.createElement("button");
+    btnApagar.type = "button";
+    btnApagar.id = "prod-apagar-tudo";
+    btnApagar.className = "btn btn-line";
+    btnApagar.textContent = "Excluir tudo";
+    btnApagar.style.color = "#a12b2b";
+    btnDup.after(btnApagar);
+    btnApagar.addEventListener("click", verApagarTudo);
     $("prod-arquivo").addEventListener("change", aoEscolherPlanilha);
     $("prod-importar-site").addEventListener("click", (e) => importarDoSite(e.currentTarget));
     $("prod-lista").addEventListener("click", (e) => {
+      const conf = e.target.closest("[data-conf]");
+      if (conf) { alternarConfirmacao(conf.dataset.conf); return; }
       const card = e.target.closest(".prod-card");
       if (card) abrirEditor(produtos.find((p) => p.id === card.dataset.id));
     });
     $("prod-lista").addEventListener("keydown", (e) => {
+      if (e.target.closest("[data-conf]")) return; // Enter no botão = clique do botão, não abre o editor
       const card = e.target.closest(".prod-card");
       if (card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); abrirEditor(produtos.find((p) => p.id === card.dataset.id)); }
     });
