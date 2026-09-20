@@ -302,22 +302,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
   width: 100%;
 }
 .chips-variacao-grupo:first-child { margin-top: 0; }
-
-/* Peça com aro feminino + masculino: no desktop bota os dois grupos lado a lado
-   (metade da largura cada) em vez de empilhados, pra não empurrar o resto do
-   formulário pra fora da tela. No celular (sem espaço de sobra) continua empilhado. */
-@media (min-width: 640px) {
-  .chips-variacao--duplo {
-    display: flex;
-    gap: 1.25rem;
-    align-items: flex-start;
-  }
-  .chips-variacao--duplo .chips-variacao-grupo {
-    margin-top: 0;
-    flex: 1 1 0;
-    min-width: 0;
-  }
-}
 .chips-variacao-rotulo {
   display: block;
   font-size: 0.8rem;
@@ -531,5 +515,39 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
     border-width: 2px;
     border-style: solid;
     border-color: var(--pedido-fg);
+  }
+}
+
+/* ---------- Desktop: o formulário ROLA quando não cabe na tela ----------
+   Antes o card era overflow:hidden e a linha do grid crescia junto com o conteúdo,
+   então tudo que passava da altura da tela (Observações, "Finalizar pedido")
+   ficava cortado, sem rolagem. Agora a linha do grid tem a altura da tela
+   (minmax(0,1fr)) e só a coluna do formulário rola. Quando cabe, continua centralizado. */
+@media (min-width: 861px) {
+  .pedido-card { grid-template-rows: minmax(0, 1fr); }
+  .pedido-card form {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    justify-content: flex-start;
+    padding-bottom: 1rem;
+    scrollbar-gutter: stable;
+  }
+  /* margin:auto centraliza quando sobra espaço e vira 0 quando falta (sem cortar o topo) */
+  .pedido-card form > :first-child { margin-top: auto; }
+  .pedido-card form > :last-child { margin-bottom: auto; }
+  .pedido-card form > * { flex-shrink: 0; }
+
+  /* Aro feminino + aro masculino lado a lado, pra economizar altura */
+  .chips-variacao:has(.chips-variacao-grupo:nth-child(2)) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1rem;
+    align-items: start;
+  }
+  .chips-variacao:has(.chips-variacao-grupo:nth-child(2)) .chips-variacao-grupo { margin-top: 0; }
+  .chips-variacao:has(.chips-variacao-grupo:nth-child(2)) .chips-variacao-linha {
+    grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
   }
 }
