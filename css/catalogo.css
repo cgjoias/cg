@@ -549,3 +549,32 @@
     z-index: 210;
   }
 }
+
+/* ---------- Painel de detalhes: textos cinza ficam PRETOS no modo claro ----------
+   Código, rótulos das medidas (Largura/Cor/Pedra), "Tamanhos disponíveis" e a
+   descrição. No modo escuro continuam no tom claro de sempre (senão sumiriam no fundo preto). */
+.detalhe-info .detalhe-codigo,
+.detalhe-info .detalhe-spec-linha span:first-child,
+.detalhe-info .detalhe-tamanhos-rotulo,
+.detalhe-info .detalhe-descricao {
+  color: #000;
+}
+[data-theme="dark"] .detalhe-info .detalhe-codigo,
+[data-theme="dark"] .detalhe-info .detalhe-spec-linha span:first-child,
+[data-theme="dark"] .detalhe-info .detalhe-tamanhos-rotulo,
+[data-theme="dark"] .detalhe-info .detalhe-descricao {
+  color: var(--muted);
+}
+
+/* ---------- Valores em NEGRITO (modo claro) e borda mais grossa no "Consulte disponibilidade" ---------- */
+.produto-preco,
+.detalhe-preco {
+  font-weight: 700;
+}
+[data-theme="dark"] .produto-preco,
+[data-theme="dark"] .detalhe-preco {
+  font-weight: 400; /* modo escuro continua como era */
+}
+.detalhe-info .tamanho-chip {
+  border-width: 2px;
+}
