@@ -14,7 +14,521 @@
   <link rel="stylesheet" href="css/tokens.css?v=20260920d">
   <link rel="stylesheet" href="css/base.css?v=20260920q">
   <link rel="stylesheet" href="css/sacola.css?v=20260920e">
-  <link rel="stylesheet" href="css/catalogo.css?v=20260920u">
+  <!-- CSS do catalogo embutido aqui de propósito: não depende do cache/pasta de css/catalogo.css -->
+  <style>
+.catalogo-header {
+  background: var(--velvet);
+  color: var(--bone);
+  padding: var(--space-4) 0 var(--space-3);
+  text-align: center;
+  border-bottom: 3px solid #000; /* linha preta embaixo do título — preta no claro, branca no escuro (igual às páginas institucionais) */
+}
+[data-theme="dark"] .catalogo-header { border-bottom-color: #fff; } /* modo escuro: linha branca */
+.catalogo-header h1 { color: var(--bone); }
+.catalogo-header .eyebrow { justify-content: center; }
+
+.busca-produto {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  max-width: 420px;
+  margin: var(--space-3) auto 0;
+  padding: 0.7em 1.2em;
+  background: var(--surface);
+  border: 2px solid var(--divider-color);
+  border-radius: 999px;
+  transition: border-color 0.2s ease;
+}
+.busca-produto svg { flex-shrink: 0; color: var(--muted); }
+.busca-produto:focus-within { border-color: var(--medallion-gold); }
+.busca-produto input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+.busca-produto input::placeholder { color: var(--muted); }
+.busca-produto input::-webkit-search-cancel-button { cursor: pointer; }
+
+.tabs-categoria {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+}
+.tabs-categoria button {
+  border: 2px solid var(--divider-color);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.55em 1.3em;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tabs-categoria button:hover { border-color: var(--medallion-gold); }
+.tabs-categoria button.active { background: var(--velvet); color: var(--nav-gold); border-color: var(--nav-gold); }
+/* Modo escuro: a categoria selecionada mantém o visual anterior (borda branca, letra escura) */
+[data-theme="dark"] .tabs-categoria button.active { color: var(--bone); border-color: var(--divider-color); }
+
+.grid-produtos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-2) 0 var(--space-5);
+}
+@media (max-width: 900px) { .grid-produtos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .grid-produtos { grid-template-columns: minmax(0, 1fr); } }
+
+.produto-card {
+  background: var(--surface);
+  border: 2px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.produto-card:hover { transform: translateY(-2px); }
+.produto-medalhao { width: 130px; margin-bottom: var(--space-2); }
+.produto-card h3 { font-size: 1.1rem; margin-bottom: 0.1em; }
+.produto-material { color: var(--gold-dim); font-size: 0.8rem; letter-spacing: 0.03em; margin-bottom: 0.3em; }
+.produto-preco { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.4em; }
+.produto-codigo { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); flex-grow: 1; }
+.produto-card .btn { width: 100%; position: relative; z-index: 1; flex-shrink: 0; }
+.produto-card .btn + .btn { margin-top: 0.6rem; } /* espaço entre "Pedir esta peça" e "Adicionar à sacola" */
+.produto-card .btn-line,
+.produto-card .btn-line:hover { border: 2px solid var(--divider-color); }
+
+#catalogo-vazio { text-align: center; padding: var(--space-4) 0; color: var(--muted); }
+
+/* ---------- Medalhão clicável (abre foto ampliada) ---------- */
+.produto-medalhao {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+.produto-medalhao:hover { transform: scale(1.04); }
+.produto-medalhao:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+/* ---------- Modal de detalhes (fotos + especificações + tamanhos) ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--surface);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+.lightbox[hidden] { display: none; }
+
+/* Painel de detalhes em TELA CHEIA, SEM ROLAGEM (desktop e celular):
+   tudo cabe na altura da tela. O JS (ajustarInfo em catalogo.js) reduz o texto
+   só o necessário quando a tela é muito baixa. */
+.detalhe-painel {
+  position: relative;
+  background: var(--surface);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+}
+@media (max-width: 760px) {
+  .detalhe-painel { display: flex; flex-direction: column; }
+}
+
+.detalhe-foto {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bone-2);
+  padding: var(--space-4);
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: calc(100vh - 6rem);
+  max-height: calc(100dvh - 6rem);
+  border-radius: var(--radius-s);
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.detalhe-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 4rem clamp(1.5rem, 4vw, 4.5rem) 1.25rem;
+  color: var(--ink);
+  overflow-y: auto; /* só aparece se o navegador não suportar o ajuste automático */
+  border-left: 2px solid var(--divider-color);
+}
+/* conteúdo centralizado na vertical quando sobra espaço */
+.detalhe-info-conteudo { margin: auto 0; width: 100%; }
+
+@media (max-width: 760px) {
+  .detalhe-foto { flex: 1 1 0; padding: 3.6rem 0.75rem 0.75rem; }
+  /* foto ocupa exatamente o espaço que sobra acima das informações */
+  .lightbox-img {
+    position: absolute;
+    top: 3.6rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: calc(100% - 1.5rem);
+    height: calc(100% - 4.35rem);
+    max-height: none;
+  }
+  .detalhe-info {
+    flex: 0 0 auto;
+    max-height: 64vh;
+    max-height: 64dvh;
+    padding: 0.8rem 1rem calc(0.9rem + env(safe-area-inset-bottom));
+    border-left: none;
+    border-top: 2px solid var(--divider-color);
+  }
+}
+.detalhe-info h3 { font-size: clamp(1.4rem, 3.2vh, 1.8rem); margin-bottom: 0.2em; }
+.detalhe-codigo { color: var(--muted); font-size: 0.86rem; margin-bottom: 0.4em; }
+.detalhe-preco { font-family: var(--font-display); font-size: clamp(1.5rem, 3.6vh, 1.9rem); margin-bottom: 0.2em; }
+.detalhe-material { color: var(--gold-dim); font-size: 0.85rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); }
+
+.detalhe-specs {
+  border-top: 1px solid var(--bone-2);
+  border-bottom: 1px solid var(--bone-2);
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-2);
+}
+.detalhe-spec-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.88rem;
+  padding: 0.2em 0;
+}
+.detalhe-spec-linha span:first-child { color: var(--muted); }
+.detalhe-spec-linha span:last-child { text-align: right; font-weight: 600; }
+
+.detalhe-tamanhos { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-grupo { margin-bottom: var(--space-2); }
+.detalhe-tamanhos-rotulo {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3em;
+}
+.detalhe-tamanhos-lista { display: flex; flex-wrap: wrap; gap: 0.4em; }
+.tamanho-chip {
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.25em 0.8em;
+  font-size: 0.82rem;
+}
+
+.detalhe-descricao {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.detalhe-info .btn { width: 100%; }
+
+/* Botão Fechar: pílula "✕ Fechar", fixa no canto (não some ao rolar no celular) */
+/* Grupo fixo no canto: [tema] [Fechar] */
+.lightbox-acoes {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 5;
+}
+.lightbox-tema {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--divider-color);
+  background: var(--section-bg);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.lightbox-tema:hover { background: var(--bone-2); }
+.lightbox-tema:active { transform: scale(0.92); }
+.lightbox-tema .emo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.2rem;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
+.lightbox-tema .icon-lua { display: none; }
+[data-theme="dark"] .lightbox-tema .icon-sol { display: none; }
+[data-theme="dark"] .lightbox-tema .icon-lua { display: flex; }
+.lightbox-fechar {
+  position: static;
+  height: 46px;
+  min-width: 46px;   /* só com o ❌ fica redondo; com texto (HTML antigo) vira pílula */
+  padding: 0 0.6em;
+  gap: 0.5em;
+  border-radius: 999px;
+  border: 2px solid var(--divider-color);
+  background: var(--section-bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.lightbox-fechar:hover { background: var(--ink); color: var(--section-bg); }
+.lightbox-fechar .emo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: var(--velvet-2);
+  color: var(--bone);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+.lightbox-nav:hover { background: var(--velvet-3); }
+.lightbox-prev { left: var(--space-2); }
+.lightbox-next { right: var(--space-2); }
+@media (max-width: 640px) {
+  .lightbox-nav { width: 38px; height: 38px; font-size: 1.3rem; }
+}
+
+/* Botão "Adicionar à sacola" (cartão e painel de detalhes) */
+.btn-sacola {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--divider-color);
+  margin-top: 0.5rem;
+}
+.btn-sacola:disabled { opacity: 0.7; cursor: default; }
+
+/* Modo escuro: fundo da página do catálogo em preto */
+[data-theme="dark"] body.pagina-catalogo { background: #000; }
+
+/* Efeito de hover igual nos dois botões (Pedir esta peça / Adicionar à sacola),
+   no cartão e no painel de detalhes: preenche com a cor do texto (escuro no modo
+   claro, claro no modo escuro) e inverte a cor da letra. */
+.produto-card .btn-line:hover,
+.btn-sacola:hover,
+.detalhe-info .btn-primary:hover {
+  background: var(--ink);
+  color: var(--section-bg);
+  border-color: var(--divider-color);
+}
+
+/* Botão "Tela cheia" sobre a foto do painel de detalhes */
+.ampliar-foto {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 0.95em;
+  border-radius: 999px;
+  border: 2px solid var(--divider-color);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.ampliar-foto:hover { background: var(--ink); color: var(--section-bg); }
+
+/* Modo escuro: painel de detalhes em preto */
+[data-theme="dark"] .detalhe-painel,
+[data-theme="dark"] .detalhe-foto,
+[data-theme="dark"] .lightbox { background: #000; }
+
+/* Celular: cabeçalho, medidas e botões mais compactos para tudo caber sem rolar */
+@media (max-width: 760px) {
+  .lightbox-fechar { height: 40px; min-width: 40px; padding: 0 0.5em; font-size: 0.88rem; }
+  .lightbox-tema { width: 40px; height: 40px; }
+  .ampliar-foto {
+    position: fixed; /* fixo no topo, alinhado com o tema e o Fechar, mesmo rolando */
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    bottom: auto;
+    height: 40px;
+    padding: 0 0.9em;
+    background: var(--section-bg);
+  }
+  .detalhe-info h3 { font-size: 1.2rem; }
+  .detalhe-codigo { margin-bottom: 0.2em; }
+  .detalhe-preco { font-size: 1.35rem; }
+  .detalhe-material { margin-bottom: 0.5rem; }
+  .detalhe-specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1rem;
+    padding: 0.4rem 0;
+    margin-bottom: 0.5rem;
+  }
+  .detalhe-spec-linha { font-size: 0.8rem; padding: 0; gap: 0.4em; }
+  .detalhe-tamanhos { margin-bottom: 0.5rem; }
+  .detalhe-tamanhos-grupo { margin-bottom: 0.3rem; }
+  .detalhe-descricao { display: block; overflow: visible; font-size: 0.9rem; margin-bottom: 0.6rem; } /* texto completo, sem cortar */
+  .detalhe-info-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .detalhe-info .btn { padding: 0.7em 0.6em; font-size: 0.85rem; }
+  .detalhe-info .btn-sacola { margin-top: 0; } /* só no painel de detalhes (ele usa grid com gap) */
+}
+@media (min-width: 761px) and (max-height: 700px) {
+  .detalhe-descricao { -webkit-line-clamp: 2; }
+  .detalhe-info { padding-top: 3.6rem; }
+}
+
+/* Modo escuro: borda do botão "Pedir esta peça" do painel em branco (a preta sumiria no fundo preto) */
+[data-theme="dark"] .detalhe-info .btn-primary { border-color: var(--divider-color); }
+
+/* ---------- Celular: o painel de detalhes ROLA ----------
+   Foto no topo, informações completas embaixo, e os botões "Pedir esta peça" /
+   "Adicionar à sacola" ficam sempre visíveis no rodapé da tela. Vem no fim do
+   arquivo de propósito, pra vencer as regras anteriores. */
+@media (max-width: 760px) {
+  .detalhe-painel {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .detalhe-foto { height: 54vh; height: 54dvh; padding-top: calc(var(--topo-h) + 0.6rem); }
+  .lightbox-img {
+    top: calc(var(--topo-h) + 0.6rem);
+    height: calc(100% - var(--topo-h) - 1.35rem);
+  }
+  .detalhe-info { max-height: none; overflow: visible; }
+  .detalhe-info-conteudo { margin: 0; }
+  .detalhe-info-acoes {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: var(--surface);
+    padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom));
+    margin-top: 0.4rem;
+    border-top: 1px solid var(--bone-2);
+  }
+  [data-theme="dark"] .detalhe-info-acoes { background: #000; }
+}
+
+/* ---------- Celular: barra rosa no topo do painel de detalhes ----------
+   Mesma cor e linha preta do header do site (--header-bg), com os botões
+   "Tela cheia", tema e "Fechar" dentro dela. A barra fica fixa: só a peça rola. */
+@media (max-width: 760px) {
+  .lightbox { --topo-h: calc(64px + env(safe-area-inset-top, 0px)); }
+  .lightbox::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: var(--topo-h);
+    background: var(--header-bg);
+    border-bottom: 3px solid #000;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .lightbox-acoes,
+  .ampliar-foto {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    z-index: 6;
+  }
+  .lightbox-acoes { right: 12px; gap: 0.5rem; }
+  .ampliar-foto { left: 12px; }
+
+  /* botões sobre o rosa: fundo branco, borda preta 2px, texto escuro (nos dois modos) */
+  .lightbox-tema,
+  .lightbox-fechar,
+  .ampliar-foto {
+    height: 40px;
+    border: 2px solid #000;
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 2px 6px rgba(58, 20, 32, 0.18);
+  }
+  .lightbox-tema { width: 40px; }
+  .lightbox-tema:hover,
+  .ampliar-foto:hover { background: var(--velvet-2); color: #1a1a1a; }
+  .lightbox-fechar:hover { background: var(--velvet-2); color: #1a1a1a; }
+}
+
+/* ---------- Segurança: "Fechar" sempre visível ----------
+   Se o catalogo.html ainda for a versão antiga (sem o grupo .lightbox-acoes),
+   o botão Fechar é filho direto do painel — então ele se posiciona sozinho. */
+.detalhe-painel > .lightbox-fechar {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 6;
+}
+@media (max-width: 760px) {
+  .detalhe-painel > .lightbox-fechar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: 12px;
+  }
+  /* painel rola, mas sem mostrar a barra de rolagem dourada na borda */
+  .detalhe-painel { scrollbar-width: none; }
+  .detalhe-painel::-webkit-scrollbar { display: none; }
+}
+
+  </style>
   <link rel="stylesheet" href="css/zoom-imagem.css?v=20260920h">
 </head>
 <body class="pagina-catalogo">
@@ -129,7 +643,340 @@
 
   <script src="data/produtos.js"></script>
   <script src="js/zoom-imagem.js?v=20260920h"></script>
-  <script src="js/catalogo.js?v=20260920u"></script>
+  <!-- JS do catalogo embutido aqui de propósito: não depende do cache/pasta de js/catalogo.js -->
+  <script>
+// ============================================================
+// BOTÕES DO TOPO DO PAINEL DE DETALHES: [ ☀️/🌙 tema ] [ ❌ fechar ]
+// Monta (ou completa) o grupo de botões sozinho, então funciona
+// mesmo que o catalogo.html seja uma versão mais antiga. O botão de
+// tema usa um id próprio, pra o tema.js não ligar o clique duas vezes.
+// ============================================================
+(function montarBotoesDoDetalhe() {
+  const painel = document.querySelector(".detalhe-painel");
+  const fechar = document.getElementById("lightbox-fechar");
+  if (!painel || !fechar) return;
+
+  let grupo = painel.querySelector(".lightbox-acoes");
+  if (!grupo) {
+    grupo = document.createElement("div");
+    grupo.className = "lightbox-acoes";
+    painel.insertBefore(grupo, fechar);
+    grupo.appendChild(fechar);
+  }
+
+  let tema = grupo.querySelector(".lightbox-tema");
+  if (!tema) {
+    tema = document.createElement("button");
+    tema.className = "lightbox-tema";
+    tema.innerHTML =
+      '<span class="emo icon-sol" aria-hidden="true">☀️</span>' +
+      '<span class="emo icon-lua" aria-hidden="true">🌙</span>';
+    grupo.insertBefore(tema, fechar);
+  }
+  tema.type = "button";
+  tema.id = "lightbox-tema-cg";
+  tema.setAttribute("aria-label", "Alternar modo claro/escuro");
+  tema.title = "Alternar modo claro/escuro";
+  tema.addEventListener("click", () => {
+    const escuro = document.documentElement.getAttribute("data-theme") === "dark";
+    if (escuro) {
+      document.documentElement.removeAttribute("data-theme");
+      try { localStorage.setItem("cg-tema", "light"); } catch (e) {}
+    } else {
+      document.documentElement.setAttribute("data-theme", "dark");
+      try { localStorage.setItem("cg-tema", "dark"); } catch (e) {}
+    }
+  });
+
+  // Fechar vira o ❌ redondo (igual ao da tela de pedido)
+  fechar.innerHTML = '<span class="emo" aria-hidden="true">❌</span>';
+  fechar.setAttribute("aria-label", "Fechar detalhes");
+  fechar.title = "Fechar";
+})();
+
+const CATEGORIAS = {
+  todos: "Todos",
+  aneis: "Anéis",
+  colares: "Colares",
+  brincos: "Brincos",
+  pulseiras: "Pulseiras",
+};
+
+const formatoPreco = (valor) =>
+  valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+function cardProduto(produto) {
+  const card = document.createElement("article");
+  card.className = "produto-card";
+  card.dataset.produtoId = produto.id;
+  card.innerHTML = `
+    <div class="medallion produto-medalhao" data-produto-id="${produto.id}" tabindex="0" role="button" aria-label="Ver detalhes de ${produto.nome}">
+      <div class="medallion-inner">
+        <img src="${produto.imagem}" alt="${produto.nome}">
+      </div>
+    </div>
+    <h3>${produto.nome}</h3>
+    <p class="produto-material">${produto.material}</p>
+    <p class="produto-preco">${formatoPreco(produto.preco)}</p>
+    ${produto.codigo ? `<p class="produto-codigo">Cód.: ${produto.codigo}</p>` : ""}
+    <a class="btn btn-line" href="pedido.html?produto=${encodeURIComponent(produto.id)}">Pedir esta peça</a>
+    <button type="button" class="btn btn-sacola" data-sacola-add data-produto-id="${produto.id}">Adicionar à sacola</button>
+  `;
+  return card;
+}
+
+async function iniciarCatalogo() {
+  const grid = document.getElementById("grid-produtos");
+  const tabs = document.getElementById("tabs-categoria");
+  const vazio = document.getElementById("catalogo-vazio");
+  if (!grid) return;
+
+  let produtos = [];
+  try {
+    const resposta = await fetch("data/produtos.json");
+    produtos = await resposta.json();
+  } catch (erro) {
+    // fetch() é bloqueado quando a página é aberta direto do disco (file://).
+    // Nesse caso, usa a cópia embutida em data/produtos.js (carregado no HTML).
+    if (window.PRODUTOS_DATA) {
+      produtos = window.PRODUTOS_DATA;
+    } else {
+      grid.innerHTML = "<p>Não foi possível carregar o catálogo agora. Tente novamente em instantes.</p>";
+      return;
+    }
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  let categoriaAtiva = params.get("categoria") || "todos";
+  const campoBusca = document.getElementById("busca-produto");
+  let termoBusca = "";
+
+  function render() {
+    grid.innerHTML = "";
+    let filtrados = categoriaAtiva === "todos"
+      ? produtos
+      : produtos.filter((p) => p.categoria === categoriaAtiva);
+
+    if (termoBusca) {
+      const termo = termoBusca.trim().toLowerCase();
+      filtrados = filtrados.filter((p) =>
+        (p.nome && p.nome.toLowerCase().includes(termo)) ||
+        (p.codigo && p.codigo.toLowerCase().includes(termo))
+      );
+    }
+
+    filtrados.forEach((produto) => grid.appendChild(cardProduto(produto)));
+    vazio.hidden = filtrados.length !== 0;
+
+    [...tabs.children].forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.categoria === categoriaAtiva);
+    });
+  }
+
+  tabs.addEventListener("click", (evento) => {
+    const botao = evento.target.closest("[data-categoria]");
+    if (!botao) return;
+    categoriaAtiva = botao.dataset.categoria;
+    const url = new URL(window.location);
+    url.searchParams.set("categoria", categoriaAtiva);
+    window.history.replaceState({}, "", url);
+    render();
+  });
+
+  if (campoBusca) {
+    campoBusca.addEventListener("input", (evento) => {
+      termoBusca = evento.target.value;
+      render();
+    });
+  }
+
+  render();
+  iniciarLightbox(produtos, grid);
+}
+
+const ROTULOS_SPEC = {
+  largura: "Largura",
+  cor: "Cor",
+  formato: "Formato externo",
+  acabamento: "Acabamento",
+  pedra: "Pedra",
+  detalhes: "Detalhes",
+};
+
+function fotosDoProduto(produto) {
+  if (Array.isArray(produto.imagens) && produto.imagens.length) return produto.imagens;
+  return [produto.imagem];
+}
+
+function blocoTamanhos(rotulo, tamanhos) {
+  if (!Array.isArray(tamanhos) || !tamanhos.length) return "";
+  const chips = tamanhos.map((t) => `<span class="tamanho-chip">${t}</span>`).join("");
+  return `
+    <div class="detalhe-tamanhos-grupo">
+      ${rotulo ? `<span class="detalhe-tamanhos-rotulo">${rotulo}</span>` : ""}
+      <div class="detalhe-tamanhos-lista">${chips}</div>
+    </div>
+  `;
+}
+
+function iniciarLightbox(produtos, grid) {
+  const lightbox = document.getElementById("lightbox");
+  const img = document.getElementById("lightbox-img");
+  const btnFechar = document.getElementById("lightbox-fechar");
+  const btnPrev = document.getElementById("lightbox-prev");
+  const btnNext = document.getElementById("lightbox-next");
+  const info = document.getElementById("detalhe-info");
+  if (!lightbox) return;
+
+  let fotosAtuais = [];
+  let indiceAtual = 0;
+  let elementoQueAbriu = null;
+
+  let produtoAtual = null;
+
+  function mostrarFoto() {
+    img.src = fotosAtuais[indiceAtual];
+    const multiplas = fotosAtuais.length > 1;
+    btnPrev.hidden = !multiplas;
+    btnNext.hidden = !multiplas;
+  }
+
+  // Foto em tela cheia: clique na foto ou no botão "Tela cheia"
+  function abrirTelaCheia() {
+    if (!fotosAtuais.length) return;
+    window.abrirZoomImagem(fotosAtuais, indiceAtual, produtoAtual ? produtoAtual.nome : "");
+  }
+  img.addEventListener("click", abrirTelaCheia);
+  const btnTelaCheia = document.getElementById("ampliar-foto");
+  if (btnTelaCheia) btnTelaCheia.addEventListener("click", abrirTelaCheia);
+
+  function montarInfo(produto) {
+    const specs = Object.entries(ROTULOS_SPEC)
+      .filter(([chave]) => produto[chave])
+      .map(([chave, rotulo]) => `
+        <div class="detalhe-spec-linha">
+          <span>${rotulo}</span>
+          <span>${produto[chave]}</span>
+        </div>
+      `)
+      .join("");
+
+    const tamanhosHTML = produto.tamanhosFeminino || produto.tamanhosMasculino
+      ? blocoTamanhos("Feminino", produto.tamanhosFeminino) + blocoTamanhos("Masculino", produto.tamanhosMasculino)
+      : blocoTamanhos("Tamanhos disponíveis", produto.tamanhos);
+
+    info.innerHTML = `<div class="detalhe-info-conteudo">
+      <h3>${produto.nome}</h3>
+      ${produto.codigo ? `<p class="detalhe-codigo">Cód.: ${produto.codigo}</p>` : ""}
+      <p class="detalhe-preco">${formatoPreco(produto.preco)}</p>
+      <p class="detalhe-material">${produto.material}</p>
+      ${specs ? `<div class="detalhe-specs">${specs}</div>` : ""}
+      ${tamanhosHTML ? `<div class="detalhe-tamanhos">${tamanhosHTML}</div>` : ""}
+      <p class="detalhe-descricao">${produto.descricao}</p>
+      <div class="detalhe-info-acoes">
+        <a class="btn btn-primary" href="pedido.html?produto=${encodeURIComponent(produto.id)}">Pedir esta peça</a>
+        <button type="button" class="btn btn-sacola" data-sacola-add data-produto-id="${produto.id}">Adicionar à sacola</button>
+      </div>
+    </div>`;
+  }
+
+  // Painel em tela cheia SEM rolagem: se o conteúdo passar da altura disponível,
+  // reduz o tamanho (zoom) só o suficiente para caber.
+  function ajustarInfo() {
+    const conteudo = info.firstElementChild;
+    if (!conteudo || lightbox.hidden) return;
+    conteudo.style.zoom = "";
+    let z = 1;
+    while (z > 0.55 && info.scrollHeight > info.clientHeight) {
+      z = Math.round((z - 0.04) * 100) / 100;
+      conteudo.style.zoom = String(z);
+    }
+  }
+  window.addEventListener("resize", ajustarInfo);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarInfo);
+
+  function abrir(produto, elementoOrigem) {
+    produtoAtual = produto;
+    fotosAtuais = fotosDoProduto(produto);
+    indiceAtual = 0;
+    img.alt = produto.nome;
+    montarInfo(produto);
+    elementoQueAbriu = elementoOrigem;
+    lightbox.hidden = false;
+    window.travarScrollPagina();
+    ajustarInfo();
+    mostrarFoto();
+    btnFechar.focus();
+  }
+
+  function fechar() {
+    lightbox.hidden = true;
+    window.destravarScrollPagina();
+    if (elementoQueAbriu) elementoQueAbriu.focus();
+  }
+
+  function anterior() {
+    indiceAtual = (indiceAtual - 1 + fotosAtuais.length) % fotosAtuais.length;
+    mostrarFoto();
+  }
+
+  function proxima() {
+    indiceAtual = (indiceAtual + 1) % fotosAtuais.length;
+    mostrarFoto();
+  }
+
+  // "Adicionar à sacola" — no cartão e no painel de detalhes
+  function adicionarNaSacola(botao) {
+    const produto = produtos.find((p) => p.id === botao.dataset.produtoId);
+    if (!produto || !window.Sacola) return;
+    window.Sacola.adicionar(produto);
+    const textoOriginal = botao.textContent;
+    botao.textContent = "✓ Adicionada";
+    botao.disabled = true;
+    setTimeout(() => { botao.textContent = textoOriginal; botao.disabled = false; }, 1200);
+  }
+
+  info.addEventListener("click", (evento) => {
+    const botao = evento.target.closest("[data-sacola-add]");
+    if (botao) adicionarNaSacola(botao);
+  });
+
+  grid.addEventListener("click", (evento) => {
+    const botaoSacola = evento.target.closest("[data-sacola-add]");
+    if (botaoSacola) { adicionarNaSacola(botaoSacola); return; }
+    if (evento.target.closest("a.btn")) return;
+    const cartao = evento.target.closest(".produto-card");
+    if (!cartao) return;
+    const produto = produtos.find((p) => p.id === cartao.dataset.produtoId);
+    if (produto) abrir(produto, cartao);
+  });
+
+  grid.addEventListener("keydown", (evento) => {
+    if (evento.key !== "Enter" && evento.key !== " ") return;
+    const medalhao = evento.target.closest(".produto-medalhao");
+    if (!medalhao) return;
+    evento.preventDefault();
+    const produto = produtos.find((p) => p.id === medalhao.dataset.produtoId);
+    if (produto) abrir(produto, medalhao);
+  });
+
+  btnFechar.addEventListener("click", fechar);
+  btnPrev.addEventListener("click", anterior);
+  btnNext.addEventListener("click", proxima);
+  lightbox.addEventListener("click", (evento) => {
+    if (evento.target === lightbox) fechar();
+  });
+  document.addEventListener("keydown", (evento) => {
+    if (lightbox.hidden) return;
+    if (evento.key === "Escape") fechar();
+    if (evento.key === "ArrowLeft") anterior();
+    if (evento.key === "ArrowRight") proxima();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", iniciarCatalogo);
+
+  </script>
   <script src="js/config.js?v=20260715b"></script>
   <script src="js/tema.js?v=20260920p"></script>
   <script src="js/nav-dropdown.js?v=20260715b"></script>
