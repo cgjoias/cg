@@ -141,7 +141,7 @@ html:not([data-theme="dark"]) body.pagina-gestao { background: #ffffff; }
 /* ============================================================
    ABA "PEDIDOS" — mesmo visual premium do Financeiro
    ============================================================ */
-#aba-pedidos {
+#aba-pedidos, #aba-produtos {
   --ped-card: var(--bone-2);
   --ped-borda: rgba(122, 33, 66, 0.18);
   --ped-trilho: rgba(122, 33, 66, 0.10);
@@ -149,7 +149,7 @@ html:not([data-theme="dark"]) body.pagina-gestao { background: #ffffff; }
   --ped-sombra-forte: 0 14px 34px rgba(58, 20, 32, 0.16);
   color: var(--ink);
 }
-[data-theme="dark"] #aba-pedidos {
+[data-theme="dark"] #aba-pedidos, [data-theme="dark"] #aba-produtos {
   --ped-borda: rgba(234, 173, 195, 0.22);
   --ped-trilho: rgba(234, 173, 195, 0.12);
   --ped-sombra: 0 10px 28px rgba(0, 0, 0, 0.35);
@@ -194,7 +194,7 @@ html:not([data-theme="dark"]) body.pagina-gestao { background: #ffffff; }
 .ped-secao-cab p { flex-basis: 100%; margin: 0; font-size: 0.86rem; color: var(--muted); }
 .ped-contagem { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 0.6em; border-radius: 999px; background: var(--gold-dim); color: var(--page-bg); font-weight: 600; font-size: 0.9rem; }
 
-.ped-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); grid-auto-rows: 1fr; gap: 1.1rem; align-items: stretch; }
+.ped-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); grid-auto-rows: 1fr; gap: 1.1rem; align-items: stretch; }
 .ped-vazio { grid-column: 1 / -1; margin: 0; padding: 1.6rem 1rem; text-align: center; font-size: 0.88rem; color: var(--muted); border: 1px dashed var(--ped-borda); border-radius: 16px; }
 
 /* cartão do pedido */
@@ -259,4 +259,127 @@ a.ped-mail:hover { background: #fdeceb; border-color: #c0392b; transform: transl
 }
 @media (max-width: 380px) {
   .ped-kpis { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   ABA "PRODUTOS" — mesmo visual premium de Pedidos e Financeiro
+   ============================================================ */
+#aba-produtos .prod-barra { margin-bottom: 1rem; }
+#aba-produtos .prod-busca { border-color: var(--ped-borda); background: var(--ped-card); }
+
+.prod-ferramentas { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem; padding: 0.8rem 1.1rem; margin-bottom: 1.5rem; background: var(--ped-card); border: 1px solid var(--ped-borda); border-radius: 20px; box-shadow: var(--ped-sombra); }
+.prod-ferr-tit { font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+.prod-ferramentas .prod-acoes { flex: 1 1 auto; }
+.prod-ferramentas .prod-acoes .btn { height: 38px; font-size: 0.82rem; background: transparent; }
+.prod-ferramentas .prod-acoes .btn:hover { background: var(--gold-dim); color: var(--page-bg); border-color: var(--gold-dim); }
+.prod-ferramentas .field-hint { flex-basis: 100%; margin: 0 !important; font-size: 0.7rem; opacity: 0.55; }
+#prod-apagar-tudo { border-color: #a12b2b !important; }
+#prod-apagar-tudo:hover { background: #a12b2b !important; color: #fff !important; }
+#aba-produtos .prod-msg { margin-bottom: 1rem; }
+#aba-produtos .prod-vazio { background: var(--ped-card); border: 1px dashed var(--ped-borda); border-radius: 20px; }
+
+#aba-produtos .prod-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); grid-auto-rows: 1fr; gap: 1.1rem; align-items: stretch; }
+
+/* cartão do produto: vertical, foto grande, tamanho sempre igual */
+#aba-produtos .prod-card { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 0.8rem 0.8rem 0.9rem; background: var(--ped-card); border: 1px solid var(--ped-borda); border-radius: 24px; box-shadow: var(--ped-sombra); transition: transform .15s, box-shadow .15s; }
+#aba-produtos .prod-card:hover, #aba-produtos .prod-card:focus-visible { transform: translateY(-2px); box-shadow: var(--ped-sombra-forte); border-color: var(--ped-borda); }
+#aba-produtos .prod-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; z-index: 2; background: linear-gradient(90deg, #e07a9a, #7a2142); }
+#aba-produtos .prod-card.confirmado { border-color: #000; box-shadow: 0 0 0 1px #000, var(--ped-sombra); }
+#aba-produtos .prod-card.confirmado:hover, #aba-produtos .prod-card.confirmado:focus-visible { border-color: #000; box-shadow: 0 0 0 1px #000, var(--ped-sombra-forte); }
+[data-theme="dark"] #aba-produtos .prod-card.confirmado, [data-theme="dark"] #aba-produtos .prod-card.confirmado:hover, [data-theme="dark"] #aba-produtos .prod-card.confirmado:focus-visible { border-color: #fff; box-shadow: 0 0 0 1px #fff, var(--ped-sombra); }
+#aba-produtos .prod-card.confirmado::before { background: linear-gradient(90deg, #8fc2a5, #5B8A72); }
+#aba-produtos .prod-card.oculto { opacity: 1; }
+#aba-produtos .prod-card.oculto .prod-thumb img { filter: grayscale(0.35); opacity: 0.85; }
+
+#aba-produtos .prod-thumb { position: relative; flex: 0 0 auto; width: 100%; height: auto; aspect-ratio: 1 / 1; margin-top: 0.25rem; border: 0; border-radius: 18px; background: var(--ped-trilho); }
+#aba-produtos .prod-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.prod-selo { position: absolute; top: 0.6rem; left: 0.6rem; padding: 0.25em 0.8em; border-radius: 999px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+.prod-selo.ok { color: #2f6b3a; }
+.prod-selo.espera { color: #8a6508; }
+
+#aba-produtos .prod-info { display: flex; flex-direction: column; flex: 1 1 auto; padding: 0.85rem 0.25rem 0; }
+.prod-cat { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#aba-produtos .prod-info h3 { margin: 0.25rem 0 0.6rem; font-family: var(--font-display, inherit); font-size: 1.2rem; line-height: 1.2; min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.prod-precos { list-style: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 0.35rem; margin: 0 0 0.8rem; padding: 0; min-height: 3.6rem; }
+.prod-precos li { display: inline-flex; flex-direction: column; padding: 0.3rem 0.7rem; border-radius: 12px; background: var(--ped-trilho); line-height: 1.2; }
+.prod-precos li span { font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.prod-precos li strong { font-size: 0.86rem; white-space: nowrap; }
+.prod-rodape { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.prod-fotos-n { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
+.prod-fotos-n.falta { color: #b0416b; font-weight: 500; }
+#aba-produtos .prod-conf { margin: 0; width: 100%; padding: 0.55em 1em; border-radius: 999px; font-size: 0.82rem; border: 2px solid #3a1420; background: rgba(255, 255, 255, 0.75); color: #3a1420; transition: background .15s, color .15s; }
+#aba-produtos .prod-conf:hover { background: #3a1420; color: #fff; }
+#aba-produtos .prod-card:not(.confirmado) .prod-conf { background: var(--btn-primary-bg); }
+#aba-produtos .prod-card:not(.confirmado) .prod-conf:hover { background: #3a1420; color: #fff; }
+
+@media (max-width: 720px) {
+  #aba-produtos .prod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+  #aba-produtos .prod-card { border-radius: 20px; padding: 0.6rem 0.6rem 0.75rem; }
+  #aba-produtos .prod-info h3 { font-size: 1rem; }
+  #aba-produtos .prod-conf { font-size: 0.72rem; padding: 0.5em 0.5em; }
+  .prod-ferramentas .prod-acoes .btn { flex: 1 1 calc(50% - 0.5rem); }
+}
+
+/* ============================================================
+   CELULAR — a Gestão inteira
+   ============================================================ */
+/* margem lateral (antes ficava colado na borda da tela) */
+#painel-gestao.gestao-wrap { padding-left: var(--space-3); padding-right: var(--space-3); }
+
+/* o botão flutuante do WhatsApp é do site, não da Gestão: só atrapalha o painel */
+body.pagina-gestao .whatsapp-float { display: none; }
+
+@media (max-width: 720px) {
+  #painel-gestao.gestao-wrap { padding: 1.25rem 1rem 3rem; }
+
+  /* faixa do título mais baixa */
+  .gestao-header { padding: 1.4rem 0 1.1rem; }
+  .gestao-header h1 { font-size: 2.3rem; margin: 0.15rem 0 0; }
+
+  /* login */
+  .portao { margin: 1.75rem auto; padding: 0 1rem; }
+  .portao-card { padding: 1.5rem 1.25rem; border-radius: 20px; }
+
+  /* abas + Sair: cabem sempre na largura da tela */
+  #painel-gestao .gestao-topo { flex-wrap: nowrap; gap: 0.5rem; margin-bottom: 1rem; }
+  #painel-gestao .gestao-abas { flex: 1 1 auto; min-width: 0; gap: 0.15rem; }
+  #painel-gestao .gestao-aba { flex: 1 1 auto; min-width: 0; padding: 0.55em 0.4em; font-size: 0.84rem; text-align: center; white-space: nowrap; }
+  #painel-gestao #btn-sair { flex: 0 0 auto; padding: 0.5em 1em; font-size: 0.84rem; }
+
+  /* topo (hero) das três abas: mais compacto, botões lado a lado */
+  .ped-hero, .fin-hero { padding: 1.15rem 1.1rem; margin-bottom: 0.9rem; }
+  .ped-titulo, .fin-titulo { font-size: 2rem; }
+  .ped-hero-sub, .fin-hero-sub { font-size: 0.8rem; margin-top: 0.4rem; }
+  .ped-hero-acoes, .fin-hero-acoes { gap: 0.5rem; }
+  .ped-hero-acoes .btn, .fin-hero-acoes .btn { flex: 1 1 calc(50% - 0.25rem); padding: 0.65em 0.6em; font-size: 0.84rem; text-align: center; }
+  .ped-hero-acoes .btn:only-child, .fin-hero-acoes .btn:only-child { flex-basis: 100%; }
+
+  /* indicadores */
+  .ped-kpis { gap: 0.6rem; margin-bottom: 1.1rem; }
+  .ped-kpi { padding: 0.85rem 0.9rem; }
+  .ped-valor { font-size: 1.3rem; }
+  .ped-rotulo { font-size: 0.74rem; }
+
+  /* busca e filtros */
+  .ped-barra { gap: 0.6rem; margin-bottom: 1.1rem; }
+  .ped-barra .prod-busca { flex-basis: 100%; }
+  .ped-filtros { width: 100%; }
+  .ped-filtros button { flex: 1 1 auto; text-align: center; }
+
+  /* ferramentas */
+  .prod-ferramentas { padding: 0.75rem 0.85rem; border-radius: 18px; margin-bottom: 1.1rem; }
+  .prod-ferr-tit { flex-basis: 100%; }
+
+  /* cartões de pedido */
+  .ped-secao-cab h2 { font-size: 1.4rem; }
+  .ped-card { padding: 1.1rem 1rem 1rem; }
+  .ped-contato { height: 3.2rem; }
+  .pedido-actions .btn { padding: 0.6em 0.5em; }
+  .ped-risco .btn { width: 100%; }
+}
+@media (max-width: 360px) {
+  #painel-gestao .gestao-aba { font-size: 0.78rem; padding: 0.5em 0.25em; }
+  .ped-filtros button { padding: 0.5em 0.6em; font-size: 0.76rem; }
+  .ped-valor { font-size: 1.15rem; }
+  #aba-produtos .prod-info h3 { font-size: 0.92rem; }
 }
