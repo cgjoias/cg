@@ -532,8 +532,12 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
     overflow-x: hidden;
     justify-content: flex-start;
     padding-bottom: 1rem;
-    scrollbar-gutter: stable;
+    /* rolagem continua funcionando (roda do mouse, trackpad, teclado), mas sem barra visível */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: auto;
   }
+  .pedido-card form::-webkit-scrollbar { display: none; width: 0; height: 0; }
   /* margin:auto centraliza quando sobra espaço e vira 0 quando falta (sem cortar o topo) */
   .pedido-card form > :first-child { margin-top: auto; }
   .pedido-card form > :last-child { margin-bottom: auto; }
