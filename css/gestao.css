@@ -1,13 +1,14 @@
 .gestao-header {
-  background: var(--section-bg); /* branco no modo claro, preto no escuro */
-  color: var(--ink);
+  background: var(--velvet);
+  color: var(--bone);
   padding: var(--space-4) 0 var(--space-3);
   text-align: center;
 }
-.gestao-header h1 { color: var(--ink); }
-.gestao-header .eyebrow, .gestao-header .eyebrow.on-dark { color: var(--ink); }
-.gestao-header .eyebrow::before, .gestao-header .eyebrow.on-dark::before { background: var(--ink); }
+.gestao-header h1 { color: var(--bone); }
 .gestao-header .eyebrow { justify-content: center; }
+
+/* Fundo da página de Gestão: branco (no modo escuro continua escuro) */
+html:not([data-theme="dark"]) body.pagina-gestao { background: #ffffff; }
 
 .portao {
   max-width: 520px;
