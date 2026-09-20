@@ -10,6 +10,7 @@
   const TEXTOS = ["material", "descricao", "codigo", "cor", "pedra", "largura", "formato", "acabamento", "detalhes"];
   const LISTAS = ["tamanhos", "tamanhos_feminino", "tamanhos_masculino"];
   const XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 
   // Colunas da planilha (k = coluna no banco, t = título no Excel)
   const COLUNAS = [
@@ -322,7 +323,7 @@
       if (b.dataset.foto === "dir" && i < f.length - 1) [f[i + 1], f[i]] = [f[i], f[i + 1]];
       desenharFotos();
     }
-    if (b.dataset.imp === "cancelar") fecharModal();
+    if (b.dataset.imp === "cancelar") { imagensPendentes = null; fecharModal(); }
   }
 
   // ---------- importar produtos que já estão no site (uma vez) ----------
@@ -482,6 +483,7 @@
   }
 
   let pendente = null;
+  let imagensPendentes = null; // { codigo: [Blob, ...] } — fotos achadas dentro do próprio Excel
 
   // ---------- Leitura da planilha de Controle de Estoque/Vendas original ----------
   // Aceita, além da planilha baixada pelo botão "Baixar planilha", a planilha de
@@ -557,10 +559,7 @@
     return candidatos.length ? candidatos[candidatos.length - 1] : "";
   }
 
-  function extrairCatalogo(X, wb) {
-    const ws = achaAba(wb, "catalogo");
-    if (!ws) return [];
-    const aoa = X.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+  function posicoesCatalogo(aoa) {
     const posicoes = [];
     for (let i = 0; i < aoa.length; i++) {
       for (const c of aoa[i]) {
@@ -571,6 +570,14 @@
         }
       }
     }
+    return posicoes;
+  }
+
+  function extrairCatalogo(X, wb) {
+    const ws = achaAba(wb, "catalogo");
+    if (!ws) return { produtos: [], posicoes: [] };
+    const aoa = X.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+    const posicoes = posicoesCatalogo(aoa);
     const produtos = [];
     posicoes.forEach((p, idx) => {
       const inicio = idx > 0 ? posicoes[idx - 1].linha + 1 : Math.max(0, p.linha - 30);
@@ -587,14 +594,14 @@
         detalhes: catalogoGetField(bloco, "Detalhes"),
       });
     });
-    return produtos;
+    return { produtos, posicoes };
   }
 
   // Converte a planilha de Controle de Estoque/Vendas (abas CATALOGO + ESTOQUE) para o
   // formato { linhas, mapa } que analisar() já sabe processar, como se fosse a planilha
   // baixada pelo botão "Baixar planilha".
   function converterPlanilhaOriginal(X, wb) {
-    const catalogo = extrairCatalogo(X, wb);
+    const { produtos: catalogo, posicoes } = extrairCatalogo(X, wb);
     if (!catalogo.length) return null;
     const estoque = extrairEstoque(X, wb);
     const mapa = {};
@@ -611,16 +618,138 @@
       };
       linhas.push(COLUNAS.map((c) => porChave[c.k]));
     });
-    return { linhas, mapa, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+    return { linhas, mapa, posicoes, qtdSemEstoqueCasado: catalogo.filter((p) => !buscaEstoque(estoque, p.codigo)).length };
+  }
+
+  // ---------- imagens embutidas no .xlsx (aba CATALOGO) ----------
+  // Um .xlsx é, por dentro, um .zip com XML. As fotos ficam soltas em xl/media/*,
+  // e o desenho (xl/drawings/drawingN.xml) diz em cima de qual linha cada uma foi
+  // colada. Usamos o JSZip (só nesta função) pra ler esses arquivos sem precisar
+  // do Excel instalado, e casamos a linha da imagem com o bloco da peça mais
+  // próximo abaixo dela — a mesma ideia de "bloco" que já usamos pra pegar nome,
+  // cor, pedra etc. na extrairCatalogo.
+  async function carregarJSZip() {
+    if (window.JSZip) return window.JSZip;
+    await new Promise((ok, no) => {
+      const s = document.createElement("script");
+      s.src = JSZIP_URL;
+      s.onload = ok;
+      s.onerror = () => no(new Error("Não foi possível carregar o leitor de imagens do Excel."));
+      document.head.appendChild(s);
+    });
+    return window.JSZip;
+  }
+
+  // Resolve um caminho relativo de dentro do .xlsx (ex.: base "xl/worksheets/sheet4.xml"
+  // + alvo "../drawings/drawing1.xml" -> "xl/drawings/drawing1.xml").
+  function resolverCaminhoZip(base, alvo) {
+    const partes = base.split("/");
+    partes.pop();
+    for (const p of alvo.split("/")) {
+      if (p === "..") partes.pop();
+      else if (p === "." || p === "") continue;
+      else partes.push(p);
+    }
+    return partes.join("/");
+  }
+
+  function pastaDoArquivo(caminho) {
+    const partes = caminho.split("/");
+    const nome = partes.pop();
+    return { pasta: partes.join("/"), nome };
+  }
+
+  function parseRelsMap(xml) {
+    const mapa = {};
+    (xml.match(/<Relationship\b[^>]*\/?>/g) || []).forEach((tag) => {
+      const id = /Id="([^"]+)"/.exec(tag);
+      const alvo = /Target="([^"]+)"/.exec(tag);
+      if (id && alvo) mapa[id[1]] = alvo[1];
+    });
+    return mapa;
+  }
+
+  async function lerXmlDoZip(zip, caminho) {
+    const f = zip.file(caminho);
+    return f ? f.async("string") : null;
+  }
+
+  async function extrairImagensCatalogo(buffer, posicoes) {
+    if (!posicoes || !posicoes.length) return {};
+    try {
+      const JSZip = await carregarJSZip();
+      const zip = await JSZip.loadAsync(buffer);
+
+      const workbookXml = await lerXmlDoZip(zip, "xl/workbook.xml");
+      const workbookRelsXml = await lerXmlDoZip(zip, "xl/_rels/workbook.xml.rels");
+      if (!workbookXml || !workbookRelsXml) return {};
+
+      const mSheet = /<sheet\b[^>]*name="CATALOGO"[^>]*\/>/i.exec(workbookXml);
+      const mRid = mSheet && /r:id="([^"]+)"/.exec(mSheet[0]);
+      if (!mRid) return {};
+      const alvoSheet = parseRelsMap(workbookRelsXml)[mRid[1]];
+      if (!alvoSheet) return {};
+      const sheetPath = resolverCaminhoZip("xl/workbook.xml", alvoSheet);
+
+      const { pasta: pastaSheet, nome: nomeSheet } = pastaDoArquivo(sheetPath);
+      const sheetRelsXml = await lerXmlDoZip(zip, `${pastaSheet}/_rels/${nomeSheet}.rels`);
+      if (!sheetRelsXml) return {};
+      const relsSheet = parseRelsMap(sheetRelsXml);
+      const ridDrawing = Object.keys(relsSheet).find((k) => /drawing\d*\.xml/i.test(relsSheet[k]));
+      if (!ridDrawing) return {};
+      const drawingPath = resolverCaminhoZip(sheetPath, relsSheet[ridDrawing]);
+
+      const drawingXml = await lerXmlDoZip(zip, drawingPath);
+      if (!drawingXml) return {};
+      const { pasta: pastaDrawing, nome: nomeDrawing } = pastaDoArquivo(drawingPath);
+      const drawingRelsXml = await lerXmlDoZip(zip, `${pastaDrawing}/_rels/${nomeDrawing}.rels`);
+      const relsDrawing = drawingRelsXml ? parseRelsMap(drawingRelsXml) : {};
+
+      // Cada âncora do desenho traz a linha onde a foto foi colada + o r:embed da imagem.
+      // Planilhas de catálogo costumam ter, colado em cada bloco, um ícone decorativo
+      // pequeno (o mesmo repetido em toda peça) além da foto real — descartamos pelo
+      // tamanho de exibição na planilha (<a:ext cx="..">), bem menor que uma foto de peça.
+      const LIMIAR_EMU = 2000000; // ~5,5cm — abaixo disso é ícone/decoração, não foto
+      const ancoras = [];
+      drawingXml.split(/<xdr:(?:twoCellAnchor|oneCellAnchor)\b/).slice(1).forEach((trecho) => {
+        const mLinha = /<xdr:row>(\d+)<\/xdr:row>/.exec(trecho);
+        const mEmbed = /r:embed="([^"]+)"/.exec(trecho);
+        const mExt = /<a:ext cx="(\d+)" cy="(\d+)"/.exec(trecho);
+        if (mExt && (Number(mExt[1]) < LIMIAR_EMU || Number(mExt[2]) < LIMIAR_EMU)) return; // ícone pequeno, ignora
+        if (mLinha && mEmbed) ancoras.push({ linha: Number(mLinha[1]), rId: mEmbed[1] });
+      });
+      if (!ancoras.length) return {};
+
+      const posOrdenadas = [...posicoes].sort((a, b) => a.linha - b.linha);
+      const resultado = {};
+      for (const ancora of ancoras) {
+        const alvoImg = relsDrawing[ancora.rId];
+        if (!alvoImg) continue;
+        const mediaPath = resolverCaminhoZip(drawingPath, alvoImg);
+        const arq = zip.file(mediaPath);
+        if (!arq) continue;
+        const posicao = posOrdenadas.find((p) => p.linha >= ancora.linha);
+        if (!posicao) continue;
+        const ext = (mediaPath.split(".").pop() || "jpg").toLowerCase();
+        const mime = ext === "png" ? "image/png" : ext === "gif" ? "image/gif" : ext === "webp" ? "image/webp" : "image/jpeg";
+        const bytes = await arq.async("uint8array");
+        (resultado[posicao.codigo] ||= []).push(new Blob([bytes], { type: mime }));
+      }
+      return resultado;
+    } catch (e) {
+      return {}; // melhor esforço: se der algo errado aqui, a importação segue sem fotos
+    }
   }
 
   async function aoEscolherPlanilha(evento) {
     const arquivo = evento.target.files[0];
     evento.target.value = "";
     if (!arquivo) return;
+    imagensPendentes = null;
     try {
+      const buffer = await arquivo.arrayBuffer();
       const X = await carregarXLSX();
-      const wb = X.read(await arquivo.arrayBuffer(), { type: "array" });
+      const wb = X.read(buffer, { type: "array" });
       const linhas = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "", raw: true });
       if (!linhas.length) throw new Error("A planilha está vazia.");
       const cab = linhas[0].map(norm);
@@ -633,8 +762,10 @@
         const original = converterPlanilhaOriginal(X, wb);
         if (!original) throw new Error('Não encontrei a coluna "ID" nem as abas CATALOGO/ESTOQUE. Use a planilha baixada pelo botão "Baixar planilha", ou a sua planilha de Controle de Estoque/Vendas original.');
         pendente = analisar(original.linhas, original.mapa);
+        imagensPendentes = await extrairImagensCatalogo(buffer, original.posicoes);
         mostrarPrevia(pendente);
-        aviso(`Planilha de controle de estoque reconhecida: peças cadastradas como Anéis, preço 0 e ocultas do site até você preencher o preço real e marcar "Mostrar no site" em cada uma.`, "ok");
+        const qtdFotos = Object.keys(imagensPendentes).length;
+        aviso(`Planilha de controle de estoque reconhecida${qtdFotos ? ` — ${qtdFotos} peça(s) com foto encontrada no Excel, enviadas automaticamente ao aplicar` : ""}: peças cadastradas como Anéis, preço 0 e ocultas do site até você preencher o preço real e marcar "Mostrar no site" em cada uma.`, "ok");
         return;
       }
       pendente = analisar(linhas, mapa);
@@ -648,7 +779,10 @@
     const total = r.alterados.length + r.novos.length;
     const alterados = r.alterados.map((a) => `<li><strong>${esc(a.atual.nome)}</strong><br>${a.mudancas.map((m) =>
       `${esc(ROTULO[m.k])}: ${esc(formatarValor(m.k, m.de))} → <b>${esc(formatarValor(m.k, m.para))}</b>`).join("<br>")}</li>`).join("");
-    const novos = r.novos.map((n) => `<li><strong>${esc(n.nome)}</strong> · ${esc(CATEGORIAS[n.categoria])} · ${moeda(n.preco)}${n.ativo ? "" : " · <em>ficará oculto até você marcar Sim em “Mostrar no site”</em>"}</li>`).join("");
+    const novos = r.novos.map((n) => {
+      const temFoto = imagensPendentes && imagensPendentes[n.codigo] && imagensPendentes[n.codigo].length;
+      return `<li><strong>${esc(n.nome)}</strong> · ${esc(CATEGORIAS[n.categoria])} · ${moeda(n.preco)}${temFoto ? " · 📷 foto encontrada" : ""}${n.ativo ? "" : " · <em>ficará oculto até você marcar Sim em “Mostrar no site”</em>"}</li>`;
+    }).join("");
     const erros = r.erros.map((e) => `<li>${esc(e)}</li>`).join("");
     abrirModal(`
       <h2>Prévia da importação</h2>
@@ -668,6 +802,36 @@
     const botao = evento.currentTarget;
     botao.disabled = true;
     botao.textContent = "Aplicando...";
+
+    // Se a planilha tinha fotos embutidas, envia agora pro Storage (só pra quem
+    // ainda não tem foto nenhuma — nunca sobrescreve foto que já foi enviada à mão).
+    if (imagensPendentes && Object.keys(imagensPendentes).length) {
+      let enviadas = 0;
+      for (const novo of pendente.novos) {
+        const fotos = novo.codigo && imagensPendentes[novo.codigo];
+        if (!fotos || !fotos.length || (novo.imagens && novo.imagens.length)) continue;
+        botao.textContent = `Enviando fotos (${++enviadas})...`;
+        try {
+          const urls = [];
+          for (const blob of fotos) urls.push(await enviarFoto(blob));
+          novo.imagens = urls;
+        } catch (e) { /* melhor esforço: essa peça fica sem foto, o resto segue */ }
+      }
+      for (const alt of pendente.alterados) {
+        const codigo = alt.valores.codigo || alt.atual.codigo;
+        const fotos = codigo && imagensPendentes[codigo];
+        const jaTemFoto = (alt.atual.imagens && alt.atual.imagens.length) || (alt.valores.imagens && alt.valores.imagens.length);
+        if (!fotos || !fotos.length || jaTemFoto) continue;
+        botao.textContent = `Enviando fotos (${++enviadas})...`;
+        try {
+          const urls = [];
+          for (const blob of fotos) urls.push(await enviarFoto(blob));
+          alt.valores.imagens = urls;
+        } catch (e) { /* melhor esforço */ }
+      }
+      botao.textContent = "Aplicando...";
+    }
+
     const agora = new Date().toISOString();
     const linhas = [
       ...pendente.alterados.map((a) => ({ ...a.atual, ...a.valores, updated_at: agora })),
@@ -687,6 +851,7 @@
     fecharModal();
     aviso(`Pronto: ${pendente.alterados.length} atualizado(s), ${pendente.novos.length} novo(s). O site já está atualizado.`);
     pendente = null;
+    imagensPendentes = null;
     carregar();
   }
 
