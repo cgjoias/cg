@@ -552,6 +552,114 @@
     carregar();
   }
 
+  // Estilos da aba (injetados aqui para o painel não depender de outro arquivo).
+  const ESTILO = `
+.gestao-topo { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: var(--line); }
+.gestao-abas { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: var(--line); border-radius: 999px; }
+.gestao-aba {
+  border: 0; background: transparent; color: var(--ink);
+  padding: 0.6em 1.6em; border-radius: 999px;
+  font-family: var(--font-body); font-size: 0.95rem; cursor: pointer;
+  transition: background 0.2s ease;
+}
+.gestao-aba:hover { background: var(--gold-light); }
+.gestao-aba.active { background: var(--btn-primary-bg); color: var(--bone); font-weight: 500; box-shadow: inset 0 0 0 2px #000; }
+#btn-sair { padding: 0.6em 1.5em; background: transparent; border: 1px solid var(--gold-dim); color: var(--ink); }
+#btn-sair:hover { background: var(--gold-light); }
+
+#aba-pedidos[hidden], #aba-produtos[hidden], .prod-modal[hidden], .prod-msg[hidden], .prod-vazio[hidden] { display: none !important; }
+
+.prod-barra { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.prod-busca {
+  flex: 1 1 260px; min-width: 0; box-sizing: border-box; height: 44px;
+  padding: 0 1.1em; border-radius: 999px;
+  border: 1px solid var(--gold-dim); background: var(--surface); color: var(--ink);
+  font-family: var(--font-body); font-size: 0.92rem;
+}
+.prod-busca::placeholder { color: var(--muted); }
+.prod-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.prod-acoes .btn { height: 44px; padding: 0 1.3em; font-size: 0.88rem; white-space: nowrap; box-sizing: border-box; }
+
+.prod-msg { padding: 0.75em 1em; border-radius: var(--radius-s); margin: 0 0 1.25rem; font-size: 0.9rem; }
+.prod-msg.ok { background: #dfeee0; color: #2f6b3a; }
+.prod-msg.erro { background: var(--rose-light); color: var(--rose); }
+.prod-vazio {
+  display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center;
+  background: var(--surface); border: var(--line); border-radius: var(--radius-m);
+  padding: var(--space-4) var(--space-3); margin-bottom: 1.25rem;
+}
+.prod-vazio p { margin: 0; max-width: 460px; }
+
+.prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: var(--space-2); }
+.prod-card {
+  display: flex; gap: 0.9rem; align-items: center;
+  background: var(--surface); border: 1px solid var(--bone-2); border-radius: var(--radius-m);
+  padding: 0.75rem; cursor: pointer; transition: border-color 0.2s ease, transform 0.15s ease;
+}
+.prod-card:hover, .prod-card:focus-visible { border-color: var(--gold-dim); outline: none; transform: translateY(-1px); }
+.prod-card.oculto { opacity: 0.6; }
+.prod-thumb { flex: 0 0 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--bone-2); border: 2px solid var(--medallion-gold); }
+.prod-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prod-info { min-width: 0; }
+.prod-info h3 { font-size: 1rem; margin: 0 0 0.25em; }
+.prod-sub { margin: 0; font-size: 0.82rem; color: var(--muted); }
+
+.prod-modal {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.55);
+  overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; padding: 1.5rem 1rem;
+}
+.prod-modal-caixa {
+  width: 100%; max-width: 640px; box-sizing: border-box;
+  background: var(--page-bg); color: var(--ink);
+  border: var(--line); border-radius: var(--radius-m); padding: var(--space-3);
+}
+.prod-modal-caixa h2 { margin-top: 0; }
+.prod-modal-caixa h3 { font-size: 1.05rem; margin: 1rem 0 0.4rem; }
+.prod-modal-caixa h3 small { font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+.prod-mais { margin-bottom: 1rem; }
+.prod-mais summary { cursor: pointer; margin-bottom: 0.75rem; color: var(--gold-dim); }
+.prod-check { display: flex; align-items: center; gap: 0.5em; margin: 0.5rem 0 1rem; cursor: pointer; }
+
+.prod-fotos { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.prod-foto { position: relative; width: 104px; }
+.prod-foto img { width: 104px; height: 104px; object-fit: cover; border-radius: var(--radius-s); border: 1px solid var(--bone-2); display: block; }
+.prod-capa { position: absolute; top: 4px; left: 4px; background: var(--btn-primary-bg); color: var(--bone); font-size: 0.7rem; padding: 0.1em 0.6em; border-radius: 999px; }
+.prod-foto-acoes { display: flex; justify-content: space-between; margin-top: 4px; }
+.prod-foto-acoes button {
+  width: 30px; height: 30px; border-radius: 50%; padding: 0;
+  border: 1px solid var(--gold-dim); background: var(--surface); color: var(--ink);
+  cursor: pointer; font-size: 0.9rem; line-height: 1;
+}
+.prod-foto-acoes button:disabled { opacity: 0.3; cursor: default; }
+.prod-add-foto { cursor: pointer; }
+
+.prod-botoes { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1.25rem; }
+.prod-botoes .btn { padding: 0.7em 1.5em; }
+.prod-botoes .btn-danger { margin-left: auto; }
+
+.imp-lista { list-style: none; padding: 0; margin: 0 0 0.5rem; max-height: 240px; overflow-y: auto; font-size: 0.88rem; }
+.imp-lista li { padding: 0.45em 0; border-bottom: 1px solid var(--bone-2); }
+.imp-lista.erro li { color: var(--rose); }
+
+@media (max-width: 600px) {
+  .gestao-topo { flex-wrap: nowrap; }
+  .gestao-aba { padding: 0.55em 1.1em; }
+  .prod-acoes { width: 100%; }
+  .prod-acoes .btn { flex: 1 1 calc(50% - 0.5rem); }
+  #prod-novo { flex-basis: 100%; }
+  .prod-modal { padding: 0; }
+  .prod-modal-caixa { border-radius: 0; min-height: 100%; }
+}
+`;
+
+  function injetarEstilo() {
+    if (document.getElementById("gestao-produtos-css")) return;
+    const el = document.createElement("style");
+    el.id = "gestao-produtos-css";
+    el.textContent = ESTILO;
+    document.head.appendChild(el);
+  }
+
   // ---------- abas e inicialização ----------
   function trocarAba(nome) {
     document.querySelectorAll(".gestao-aba").forEach((b) => b.classList.toggle("active", b.dataset.aba === nome));
@@ -562,6 +670,7 @@
 
   function iniciar() {
     if (!$("aba-produtos")) return;
+    injetarEstilo();
     document.querySelectorAll(".gestao-aba").forEach((b) => b.addEventListener("click", () => trocarAba(b.dataset.aba)));
     $("prod-busca").addEventListener("input", desenhar);
     $("prod-novo").addEventListener("click", () => abrirEditor(null));
