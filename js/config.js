@@ -53,7 +53,7 @@ const VARIACOES_POR_CATEGORIA = {
 // Proteja-as em EmailJS > Security > "Allowed domains" (só o seu site).
 // ============================================================
 const EMAILJS_CONFIG = {
-  publicKey: "",
-  serviceId: "",
-  templateId: "",
+  publicKey: "iRbeGv5Qmk60RrQDj",
+  serviceId: "service_dxaj3zc",
+  templateId: "template_5lm8p5n",
 };
