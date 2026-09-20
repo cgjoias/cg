@@ -280,7 +280,8 @@
 .lightbox-fechar {
   position: static;
   height: 46px;
-  padding: 0 1.2em;
+  min-width: 46px;   /* só com o ❌ fica redondo; com texto (HTML antigo) vira pílula */
+  padding: 0 0.6em;
   gap: 0.5em;
   border-radius: 999px;
   border: 2px solid var(--divider-color);
@@ -296,6 +297,16 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 .lightbox-fechar:hover { background: var(--ink); color: var(--section-bg); }
+.lightbox-fechar .emo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
 .lightbox-nav {
   position: absolute;
   top: 50%;
@@ -373,7 +384,7 @@
 
 /* Celular: cabeçalho, medidas e botões mais compactos para tudo caber sem rolar */
 @media (max-width: 760px) {
-  .lightbox-fechar { height: 40px; padding: 0 0.9em; font-size: 0.88rem; }
+  .lightbox-fechar { height: 40px; min-width: 40px; padding: 0 0.5em; font-size: 0.88rem; }
   .lightbox-tema { width: 40px; height: 40px; }
   .ampliar-foto {
     position: fixed; /* fixo no topo, alinhado com o tema e o Fechar, mesmo rolando */
@@ -475,10 +486,9 @@
     box-shadow: 0 2px 6px rgba(58, 20, 32, 0.18);
   }
   .lightbox-tema { width: 40px; }
-  .lightbox-fechar { background: var(--rose); } /* destaque no "Fechar" */
   .lightbox-tema:hover,
   .ampliar-foto:hover { background: var(--velvet-2); color: #1a1a1a; }
-  .lightbox-fechar:hover { background: #d1668a; color: #1a1a1a; }
+  .lightbox-fechar:hover { background: var(--velvet-2); color: #1a1a1a; }
 }
 
 /* ---------- Segurança: "Fechar" sempre visível ----------
