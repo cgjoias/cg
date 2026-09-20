@@ -102,18 +102,20 @@ function cardPedido(g) {
   const itens = g.itens.map((i) => `
       <li>
         <div class="ped-item-txt">
-          <span class="ped-item-nome">${escPed(i.produto_nome)}</span>
-          ${i.detalhes ? `<span class="ped-item-det">${escPed(i.detalhes)}</span>` : ""}
+          <span class="ped-item-nome" title="${escPed(i.produto_nome)}">${escPed(i.produto_nome)}</span>
+          ${i.detalhes ? `<span class="ped-item-det" title="${escPed(i.detalhes)}">${escPed(i.detalhes)}</span>` : ""}
         </div>
         <strong>${formatarPreco(i.preco)}</strong>
       </li>`).join("");
   const ids = g.ids.join(",");
 
+  const end = g.endereco || "Endereço a combinar";
+  const obs = g.observacoes || "Sem observações";
   box.innerHTML = `
     <div class="ped-card-topo">
       <span class="ped-avatar" aria-hidden="true">${escPed(iniciais(g.nome))}</span>
       <div class="ped-cliente">
-        <h3>${escPed(g.nome)}</h3>
+        <h3 title="${escPed(g.nome)}">${escPed(g.nome)}</h3>
         <span class="ped-quando" title="${escPed(t.abs)}">${escPed(t.rel)} · ${escPed(t.abs)}</span>
       </div>
       <span class="status-tag status-${g.confirmado ? "confirmado" : "pendente"}">${g.confirmado ? "Confirmado" : "Pendente"}</span>
@@ -123,15 +125,25 @@ function cardPedido(g) {
     <div class="ped-total"><span>${g.itens.length > 1 ? `Total · ${g.itens.length} peças` : "Total"}</span><strong>${formatarPreco(g.total)}</strong></div>
 
     <div class="ped-info">
-      ${g.email ? `<p>${svgPed("email", 16)}<span><a href="mailto:${escPed(g.email)}">${escPed(g.email)}</a></span></p>` : ""}
-      <p>${svgPed("pin", 16)}<span>${escPed(g.endereco || "Endereço a combinar")}</span></p>
-      ${g.observacoes ? `<p>${svgPed("nota", 16)}<span>${escPed(g.observacoes)}</span></p>` : ""}
+      <p title="${escPed(end)}">${svgPed("pin", 16)}<span>${escPed(end)}</span></p>
+      <p class="${g.observacoes ? "" : "vazio"}" title="${escPed(obs)}">${svgPed("nota", 16)}<span>${escPed(obs)}</span></p>
     </div>
 
-    <a class="ped-whats" href="${escPed(linkWhats(g))}" target="_blank" rel="noopener">
-      ${svgPed("whats", 20)}
-      <span class="ped-whats-txt"><strong>Chamar no WhatsApp</strong><small>${escPed(g.whatsapp)}</small></span>
-    </a>
+    <div class="ped-contatos">
+      <a class="ped-contato ped-whats" href="${escPed(linkWhats(g))}" target="_blank" rel="noopener">
+        <img src="assets/img/contato/whatsapp.png" alt="" width="30" height="30">
+        <span class="ped-contato-txt"><strong>Chamar no WhatsApp</strong><small>${escPed(g.whatsapp)}</small></span>
+      </a>
+      ${g.email
+        ? `<a class="ped-contato ped-mail" href="mailto:${escPed(g.email)}" title="${escPed(g.email)}">
+            <img src="assets/img/contato/gmail.png" alt="" width="30" height="30">
+            <span class="ped-contato-txt"><strong>Enviar e-mail</strong><small>${escPed(g.email)}</small></span>
+          </a>`
+        : `<span class="ped-contato ped-mail sem">
+            <img src="assets/img/contato/gmail.png" alt="" width="30" height="30">
+            <span class="ped-contato-txt"><strong>E-mail</strong><small>não informado</small></span>
+          </span>`}
+    </div>
 
     <div class="pedido-actions">
       ${g.confirmado
