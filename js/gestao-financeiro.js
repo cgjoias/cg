@@ -7,10 +7,20 @@
 // Tabelas PRIVADAS no Supabase (schema-financeiro.sql): só quem está logado lê.
 // ============================================================
 (function () {
-  const PADRAO = { markup: 3, custo_padrao: null, arredondar: false, descontar_frete: false };
+  // Valores de venda por tipo (iguais aos do catálogo do site) e quantas peças (alianças) cada tipo leva.
+  const TIPOS = [
+    { id: "par", rotulo: "Par", por: 2 },
+    { id: "unidade", rotulo: "Unidade", por: 1 },
+    { id: "trio", rotulo: "Trio", por: 3 },
+  ];
+  const PADRAO = { markup: 3, custo_padrao: null, arredondar: false, descontar_frete: false, tabela: { par: 60, unidade: 45, trio: 85 } };
+  const LOCAL_KEY = "cg_fin_criterios";
+  const juntaCfg = (v) => ({ ...PADRAO, ...(v || {}), tabela: { ...PADRAO.tabela, ...((v && v.tabela) || {}) } });
+  const lerLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); } catch (e) { return null; } };
+  const guardarLocal = (valor, ts) => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ valor, ts })); } catch (e) { /* sem armazenamento local */ } };
   const MSG_SEM_TABELA = "As tabelas do financeiro ainda não existem no Supabase. Abra o arquivo schema-financeiro.sql, copie tudo e rode em SQL Editor > New query > Run. Depois recarregue esta página.";
 
-  let cfg = { ...PADRAO };
+  let cfg = juntaCfg();
   let modelos = [];
   let vendas = [];
   let produtosSite = [];
@@ -35,14 +45,14 @@
     return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
   }
 
-  function aviso(texto, tipo) {
-    const el = $("fin-msg");
+  function aviso(texto, tipo, idEl) {
+    const el = $(idEl || "fin-msg");
     if (!el) return;
     el.textContent = texto;
     el.className = "prod-msg " + (tipo === "erro" ? "erro" : "ok");
     el.hidden = false;
     clearTimeout(aviso.t);
-    if (tipo !== "erro") aviso.t = setTimeout(() => (el.hidden = true), 6000);
+    if (tipo !== "erro" && !idEl) aviso.t = setTimeout(() => (el.hidden = true), 6000);
   }
 
   // ============================================================
@@ -248,6 +258,67 @@
     return { valorCusto, valorVenda, lucro, semDados, pecas };
   }
 
+  // Valor de uma peça (modelo) por tipo de venda. Usa os valores Par/Unidade/Trio do produto no
+  // site quando existem; senão a tabela padrão dos critérios. Peça com preço único no site
+  // (anel, brinde etc.) entra à parte, como "preço único".
+  function tabelaDoModelo(m) {
+    const p = produtoDoSite(m.modelo);
+    const t = { ...cfg.tabela };
+    if (p && Array.isArray(p.precos) && p.precos.length) {
+      p.precos.forEach((x) => { const k = norm(x.rotulo); if (k in t && Number(x.valor) > 0) t[k] = Number(x.valor); });
+      return { tipo: true, t };
+    }
+    if (p) {
+      const unico = m.preco_venda != null && Number(m.preco_venda) > 0 ? Number(m.preco_venda) : Number(p.preco) > 0 ? Number(p.preco) : null;
+      if (unico != null) return { tipo: false, unico };
+    }
+    return { tipo: true, t };
+  }
+
+  function somaTipos(itens) {
+    const r = { par: 0, unidade: 0, trio: 0, outros: 0, pecas: 0, pecasOutros: 0 };
+    itens.forEach(({ m, qtd }) => {
+      if (!m || qtd <= 0) return;
+      const x = tabelaDoModelo(m);
+      if (x.tipo) {
+        r.pecas += qtd;
+        TIPOS.forEach((tp) => { r[tp.id] += (qtd / tp.por) * x.t[tp.id]; });
+      } else {
+        r.pecasOutros += qtd;
+        r.outros += qtd * x.unico;
+      }
+    });
+    r.soma = r.par + r.unidade + r.trio + r.outros;
+    return r;
+  }
+
+  const qtdFmt = (n) => Number(n || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+  function cartoesPorTipo(r, rotuloBase) {
+    const t = cfg.tabela;
+    const c = TIPOS.map((tp) => {
+      const dica = tp.por === 1 ? `${qtdFmt(r.pecas)} peça(s) × ${moeda(t[tp.id])}` : `${qtdFmt(r.pecas / tp.por)} ${tp.id === "par" ? "par(es)" : "trio(s)"} × ${moeda(t[tp.id])} (${qtdFmt(r.pecas)} peças)`;
+      return card(`${rotuloBase} a ${moeda(t[tp.id])} (${tp.rotulo})`, moeda(r[tp.id]), dica);
+    });
+    if (r.pecasOutros) c.push(card(`${rotuloBase} de peças com preço único`, moeda(r.outros), `${qtdFmt(r.pecasOutros)} peça(s) com preço próprio no site`));
+    c.push(card("Valor total — soma de tudo", moeda(r.soma), r.pecasOutros ? "Par + Unidade + Trio + preço único" : "Par + Unidade + Trio somados"));
+    return c;
+  }
+
+  function desenharTipos() {
+    const alvo = $("fin-tipos");
+    if (!alvo) return;
+    const est = somaTipos(modelos.map((m) => ({ m, qtd: m.estoque })));
+    const ven = somaTipos(vendas.filter((v) => !v.brinde).map((v) => ({ m: acharModelo(v.modelo), qtd: v.qtd })));
+    const recebido = totaisVendas().receita;
+    alvo.innerHTML = `
+      <h3>Valor total em jóias (estoque)</h3>
+      <div class="fin-cards">${cartoesPorTipo(est, "Valor total").join("")}</div>
+      <h3>Valor total em peças vendidas</h3>
+      <div class="fin-cards">${[...cartoesPorTipo(ven, "Vendido"), card("Recebido de fato (planilha)", moeda(recebido), "soma do PR VENDA das saídas")].join("")}</div>
+      <p class="field-hint">Cada valor é o total se todas as peças fossem vendidas naquele tipo: Par = 2 peças por par, Unidade = 1 peça, Trio = 3 peças por trio. Os valores vêm do catálogo do site (Par, Unidade, Trio); onde a peça não tem, valem os da seção Critérios.</p>`;
+  }
+
   function totaisVendas() {
     const t = { receita: 0, custo: 0, frete: 0, pecas: 0, brindes: 0, semCusto: 0 };
     vendas.forEach((v) => {
@@ -367,6 +438,13 @@
     const ex = 20;
     $("fin-criterios").innerHTML = `
       <div class="fin-form">
+        <div class="field"><label for="fin-preco-par">Valor do Par (R$)</label>
+          <input type="text" id="fin-preco-par" inputmode="decimal" value="${campoNum(cfg.tabela.par)}" placeholder="60,00"></div>
+        <div class="field"><label for="fin-preco-unidade">Valor da Unidade (R$)</label>
+          <input type="text" id="fin-preco-unidade" inputmode="decimal" value="${campoNum(cfg.tabela.unidade)}" placeholder="45,00"></div>
+        <div class="field"><label for="fin-preco-trio">Valor do Trio (R$)</label>
+          <input type="text" id="fin-preco-trio" inputmode="decimal" value="${campoNum(cfg.tabela.trio)}" placeholder="85,00">
+          <span class="field-hint">Par, Unidade e Trio: usados nos totais em jóias quando a peça não tem esses valores no catálogo do site.</span></div>
         <div class="field"><label for="fin-custo-padrao">Custo padrão por peça (R$)</label>
           <input type="text" id="fin-custo-padrao" inputmode="decimal" value="${campoNum(cfg.custo_padrao)}" placeholder="ex.: 20,00">
           <span class="field-hint">Usado nos modelos que não têm custo próprio na tabela abaixo.</span></div>
@@ -393,18 +471,41 @@
   }
 
   async function salvarCriterios(botao) {
+    const erroCampo = (t) => aviso(t, "erro", "fin-msg-criterios");
     const custo = String($("fin-custo-padrao").value).trim() === "" ? null : lerNumero($("fin-custo-padrao").value);
     const mult = lerNumero($("fin-markup").value);
-    if ($("fin-custo-padrao").value.trim() !== "" && custo === null) return aviso("Custo padrão inválido. Use números, por exemplo 20,00.", "erro");
-    if (!(mult > 0)) return aviso("Informe um multiplicador maior que zero, por exemplo 3.", "erro");
-    const novo = { markup: mult, custo_padrao: custo, arredondar: $("fin-arredondar").checked, descontar_frete: $("fin-frete").checked };
+    if ($("fin-custo-padrao").value.trim() !== "" && custo === null) return erroCampo("Custo padrão inválido. Use números, por exemplo 20,00.");
+    if (!(mult > 0)) return erroCampo("Informe um multiplicador maior que zero, por exemplo 3.");
+    const tabela = {};
+    for (const tp of TIPOS) {
+      const v = lerNumero($("fin-preco-" + tp.id).value);
+      if (!(v > 0)) return erroCampo(`Informe o valor do ${tp.rotulo} maior que zero, por exemplo ${campoNum(PADRAO.tabela[tp.id])}.`);
+      tabela[tp.id] = v;
+    }
+    const novo = { markup: mult, custo_padrao: custo, arredondar: $("fin-arredondar").checked, descontar_frete: $("fin-frete").checked, tabela };
     botao.disabled = true;
-    const { error } = await db.from("financeiro_config").upsert({ chave: "criterios", valor: novo, updated_at: new Date().toISOString() }, { onConflict: "chave" });
+    const ts = new Date().toISOString();
+    let falha = null;
+    try {
+      // .select() faz o banco devolver a linha gravada; sem isso, uma permissão faltando (RLS)
+      // grava zero linhas e não dá erro nenhum — parecia que salvava, mas não salvava.
+      const { data, error } = await db.from("financeiro_config").upsert({ chave: "criterios", valor: novo, updated_at: ts }, { onConflict: "chave" }).select();
+      if (error) falha = ehTabelaAusente(error) ? MSG_SEM_TABELA : error.message;
+      else if (!data || !data.length) falha = "o Supabase recusou a gravação (falta permissão nas tabelas do financeiro). Rode o arquivo schema-financeiro.sql em SQL Editor > New query > Run e tente de novo.";
+    } catch (e) {
+      falha = e.message || String(e);
+    }
     botao.disabled = false;
-    if (error) return aviso(ehTabelaAusente(error) ? MSG_SEM_TABELA : "Não foi possível salvar: " + error.message, "erro");
-    cfg = { ...PADRAO, ...novo };
+    guardarLocal(novo, ts); // cópia neste navegador: os critérios não se perdem mesmo se o banco falhar
+    cfg = juntaCfg(novo);
     desenharTudo();
-    aviso("Critérios salvos.");
+    if (falha) {
+      aviso("Critérios aplicados e guardados só neste navegador. Não foi possível gravar no Supabase: " + falha, "erro", "fin-msg-criterios");
+      aviso("Critérios NÃO foram gravados no Supabase: " + falha, "erro");
+    } else {
+      aviso("Critérios salvos.", "ok", "fin-msg-criterios");
+      aviso("Critérios salvos.");
+    }
   }
 
   async function salvarCampo(input) {
@@ -512,6 +613,7 @@
   // ---------- montagem ----------
   function desenharTudo() {
     desenharResumo();
+    desenharTipos();
     desenharCriterios();
     desenharModelos();
     desenharVendas();
@@ -523,7 +625,8 @@
       <p id="fin-msg" class="prod-msg" hidden></p>
       <p class="field-hint fin-topo">Estoque e vendas vêm da planilha de Controle de Estoque: envie em <strong>Produtos &gt; Importar planilha</strong> e esta aba se atualiza junto. Custo e preço de venda você define aqui e ficam salvos.</p>
       <section class="gestao-secao"><h2>Resumo</h2><div id="fin-resumo" class="fin-cards"></div></section>
-      <section class="gestao-secao"><h2>Critérios de preço</h2><div id="fin-criterios"></div></section>
+      <section class="gestao-secao"><h2>Valor total em jóias</h2><div id="fin-tipos"></div></section>
+      <section class="gestao-secao"><h2>Critérios de preço</h2><div id="fin-criterios"></div><p id="fin-msg-criterios" class="prod-msg" hidden></p></section>
       <section class="gestao-secao"><h2>Estoque por modelo</h2>
         <div class="prod-barra">
           <input type="search" id="fin-busca" class="prod-busca" placeholder="Buscar modelo ou peça...">
@@ -551,7 +654,11 @@
       return;
     }
     semTabela = false;
-    cfg = { ...PADRAO, ...((rc.data && rc.data[0] && rc.data[0].valor) || {}) };
+    const linhaCfg = rc.data && rc.data[0];
+    let valorCfg = (linhaCfg && linhaCfg.valor) || null;
+    const loc = lerLocal();
+    if (loc && loc.valor && (!linhaCfg || new Date(loc.ts) > new Date(linhaCfg.updated_at || 0))) valorCfg = loc.valor;
+    cfg = juntaCfg(valorCfg);
     modelos = (rm.data || []).map((m) => ({ ...m, estoque: Number(m.estoque) || 0, comprado: Number(m.comprado) || 0, vendido: Number(m.vendido) || 0 }));
     vendas = rv.data || [];
     produtosSite = rp.data || [];
@@ -580,6 +687,7 @@
 
   const ESTILO = `
 #aba-financeiro[hidden] { display: none !important; }
+#fin-msg { position: sticky; top: 8px; z-index: 60; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
 .fin-topo { margin: 0 0 1.25rem; }
 .fin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.85rem; }
 .fin-card { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--bone-2); border-radius: var(--radius-m); }
