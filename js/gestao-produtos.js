@@ -1373,6 +1373,8 @@
     if (financeiroPendente && window.GestaoFinanceiro) {
       botao.textContent = "Atualizando financeiro...";
       fin = await window.GestaoFinanceiro.aplicar(financeiroPendente);
+      // Recarrega a aba Financeiro na hora: totais, estoque e vendas já refletem a planilha nova.
+      if (fin && fin.ok) { try { await window.GestaoFinanceiro.abrir(); } catch (e) { /* recarrega ao abrir a aba */ } }
     }
     fecharModal();
     const problemas = [];

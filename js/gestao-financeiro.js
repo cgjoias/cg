@@ -610,8 +610,59 @@
     });
   }
 
+  // ---------- drop "Controle de estoque" ----------
+  const DROP_KEY = "cg_fin_drop_estoque";
+  function definirDrop(aberto) {
+    const b = $("fin-drop-estoque"), corpo = $("fin-estoque-corpo");
+    if (!b || !corpo) return;
+    b.setAttribute("aria-expanded", aberto ? "true" : "false");
+    b.classList.toggle("aberto", aberto);
+    corpo.hidden = !aberto;
+    try { localStorage.setItem(DROP_KEY, aberto ? "1" : "0"); } catch (e) { /* sem armazenamento */ }
+  }
+
+  function atualizarResumoDrop() {
+    const el = $("fin-drop-resumo");
+    if (!el) return;
+    const e = totaisEstoque();
+    el.textContent = modelos.length ? `${inteiro(modelos.length)} modelos · ${inteiro(e.pecas)} peças` : "sem dados";
+  }
+
+  function atualizarCarimbo() {
+    const el = $("fin-atualizado");
+    if (!el) return;
+    const datas = modelos.map((m) => m.updated_at).filter(Boolean).map((d) => new Date(d).getTime()).filter((n) => isFinite(n));
+    if (!datas.length) { el.textContent = "Ainda não há planilha importada."; return; }
+    const d = new Date(Math.max(...datas));
+    el.textContent = `Dados da planilha atualizados em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}. Cada vez que você envia a planilha, estoque, vendas e totais são recalculados.`;
+  }
+
+  // Baixa TODAS as peças (ignora a busca), em CSV com ";" que o Excel em português abre certinho.
+  function baixarEstoque() {
+    if (!modelos.length) return aviso("Ainda não há dados para baixar. Importe a planilha primeiro.", "erro");
+    const num = (v) => (v == null || v === "" ? "" : String(Number(v)).replace(".", ","));
+    const cel = (v) => { const t = String(v ?? ""); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+    const cab = ["Modelo", "Peça", "Em estoque", "Comprado", "Saídas", "Situação", "Custo (R$)", "Preço de venda (R$)", "Venda final (R$)", "Margem", "Valor em estoque (R$)"];
+    const linhas = modelos.map((m) => {
+      const c = custoEf(m), v = vendaEf(m);
+      return [m.modelo, nomeDoModelo(m), m.estoque, m.comprado, m.vendido, m.situacao || "", num(m.custo), num(m.preco_venda), num(v), c != null && v ? Math.round(((v - c) / v) * 100) + "%" : "", v != null ? num(m.estoque * v) : ""].map(cel).join(";");
+    });
+    const csv = "\ufeff" + [cab.map(cel).join(";"), ...linhas].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `controle-de-estoque-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    aviso(`Baixadas ${modelos.length} peça(s).`);
+  }
+
   // ---------- montagem ----------
   function desenharTudo() {
+    atualizarCarimbo();
+    atualizarResumoDrop();
     desenharResumo();
     desenharTipos();
     desenharCriterios();
@@ -623,16 +674,22 @@
     const raiz = $("aba-financeiro");
     raiz.innerHTML = `
       <p id="fin-msg" class="prod-msg" hidden></p>
+      <p id="fin-atualizado" class="field-hint fin-topo"></p>
       <p class="field-hint fin-topo">Estoque e vendas vêm da planilha de Controle de Estoque: envie em <strong>Produtos &gt; Importar planilha</strong> e esta aba se atualiza junto. Custo e preço de venda você define aqui e ficam salvos.</p>
       <section class="gestao-secao"><h2>Resumo</h2><div id="fin-resumo" class="fin-cards"></div></section>
       <section class="gestao-secao"><h2>Valor total em jóias</h2><div id="fin-tipos"></div></section>
       <section class="gestao-secao"><h2>Critérios de preço</h2><div id="fin-criterios"></div><p id="fin-msg-criterios" class="prod-msg" hidden></p></section>
-      <section class="gestao-secao"><h2>Estoque por modelo</h2>
-        <div class="prod-barra">
-          <input type="search" id="fin-busca" class="prod-busca" placeholder="Buscar modelo ou peça...">
-          <div class="prod-acoes"><button type="button" class="btn btn-line" id="fin-enviar-site">Aplicar preços no site</button></div>
+      <section class="gestao-secao"><h2 class="fin-h2-drop"><button type="button" class="fin-drop" id="fin-drop-estoque" aria-expanded="false" aria-controls="fin-estoque-corpo"><span>Controle de estoque</span><span class="fin-drop-resumo" id="fin-drop-resumo"></span><span class="fin-seta" aria-hidden="true">▾</span></button></h2>
+        <div id="fin-estoque-corpo" hidden>
+          <div class="prod-barra">
+            <input type="search" id="fin-busca" class="prod-busca" placeholder="Buscar modelo ou peça...">
+            <div class="prod-acoes">
+              <button type="button" class="btn btn-line" id="fin-baixar-csv">Baixar todas as peças (planilha)</button>
+              <button type="button" class="btn btn-line" id="fin-enviar-site">Aplicar preços no site</button>
+            </div>
+          </div>
+          <div id="fin-modelos" class="fin-rolagem"></div>
         </div>
-        <div id="fin-modelos" class="fin-rolagem"></div>
       </section>
       <section class="gestao-secao"><h2>Vendas</h2><div id="fin-vendas"></div></section>`;
   }
@@ -640,7 +697,7 @@
   async function abrir() {
     const raiz = $("aba-financeiro");
     if (!raiz) return;
-    if (!$("fin-resumo")) esqueleto();
+    if (!$("fin-resumo")) { esqueleto(); try { definirDrop(localStorage.getItem(DROP_KEY) === "1"); } catch (e) { /* padrão: fechado */ } }
     const [rc, rm, rv, rp] = await Promise.all([
       db.from("financeiro_config").select("*").eq("chave", "criterios"),
       db.from("financeiro_modelos").select("*").order("modelo"),
@@ -671,6 +728,8 @@
     raiz.addEventListener("click", (e) => {
       if (e.target.id === "fin-salvar-criterios") salvarCriterios(e.target);
       if (e.target.id === "fin-enviar-site") verPrecosParaOSite();
+      if (e.target.id === "fin-baixar-csv") baixarEstoque();
+      if (e.target.closest && e.target.closest("#fin-drop-estoque")) definirDrop($("fin-estoque-corpo").hidden);
     });
     raiz.addEventListener("input", (e) => {
       if (e.target.id === "fin-busca") desenharModelos();
@@ -687,6 +746,13 @@
 
   const ESTILO = `
 #aba-financeiro[hidden] { display: none !important; }
+.fin-h2-drop { margin: 0 0 0.75rem; }
+.fin-drop { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.55rem 0.2rem; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.fin-drop > span:first-child { font-family: var(--font-display, inherit); font-size: inherit; font-weight: inherit; }
+.fin-drop-resumo { font-family: var(--font-body, inherit); font-size: 0.85rem; font-weight: 400; opacity: 0.7; }
+.fin-seta { margin-left: auto; display: inline-flex; width: 2rem; height: 2rem; align-items: center; justify-content: center; border: 2px solid currentColor; border-radius: 50%; font-size: 1rem; transition: transform 0.2s; }
+.fin-drop.aberto .fin-seta { transform: rotate(180deg); }
+.fin-drop:focus-visible { outline: 2px solid var(--gold-dim); outline-offset: 2px; }
 #fin-msg { position: sticky; top: 8px; z-index: 60; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
 .fin-topo { margin: 0 0 1.25rem; }
 .fin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.85rem; }
