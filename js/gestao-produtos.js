@@ -554,6 +554,12 @@
 
   // Estilos da aba (injetados aqui para o painel não depender de outro arquivo).
   const ESTILO = `
+/* Linha embaixo do título (mesma espessura da linha do menu) e fundo do modo escuro */
+.gestao-header { border-bottom: 3px solid #000; }
+[data-theme="dark"] .gestao-header { border-bottom-color: #fff; }
+[data-theme="dark"] body { background: #000; }
+[data-theme="dark"] .prod-modal-caixa { background: #000; }
+
 .gestao-topo { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: var(--line); }
 .gestao-abas { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: var(--line); border-radius: 999px; }
 .gestao-aba {
@@ -670,7 +676,6 @@
 
   function iniciar() {
     if (!$("aba-produtos")) return;
-    injetarEstilo();
     document.querySelectorAll(".gestao-aba").forEach((b) => b.addEventListener("click", () => trocarAba(b.dataset.aba)));
     $("prod-busca").addEventListener("input", desenhar);
     $("prod-novo").addEventListener("click", () => abrirEditor(null));
@@ -690,5 +695,6 @@
     $("prod-modal-corpo").addEventListener("change", (e) => { if (e.target.id === "f-fotos") aoEscolherFotos(e); });
   }
 
+  injetarEstilo();
   document.addEventListener("DOMContentLoaded", iniciar);
 })();
