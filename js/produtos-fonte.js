@@ -22,6 +22,17 @@ function linhaParaProduto(r) {
   if (lista(r.tamanhos_feminino)) p.tamanhosFeminino = r.tamanhos_feminino;
   if (lista(r.tamanhos_masculino)) p.tamanhosMasculino = r.tamanhos_masculino;
   if (lista(r.variacoes)) p.variacoes = r.variacoes;
+  // Valores por tipo de venda (ex.: aliança = Par / Unidade / Trio). Quando existem,
+  // o "preco" do produto passa a ser o da primeira opção (usado como preço base).
+  if (lista(r.precos)) {
+    const ops = r.precos
+      .map((o) => ({ rotulo: String((o && o.rotulo) || "").trim(), valor: Number(o && o.valor) }))
+      .filter((o) => o.rotulo && o.valor > 0);
+    if (ops.length) {
+      p.precos = ops;
+      p.preco = ops[0].valor;
+    }
+  }
   const imgs = Array.isArray(r.imagens) ? r.imagens.filter(Boolean) : [];
   p.imagem = imgs[0] || "assets/img/marca/logo.jpg";
   if (imgs.length) p.imagens = imgs;
@@ -50,4 +61,40 @@ window.carregarProdutosSite = async function () {
     if (window.PRODUTOS_DATA) return window.PRODUTOS_DATA;
     throw erro;
   }
+};
+
+// ============================================================
+// VALORES POR TIPO DE VENDA (Par / Unidade / Trio)
+// Funções usadas pelo catálogo, pela sacola e pelo formulário de pedido.
+// ============================================================
+window.opcoesDePreco = function (produto) {
+  return produto && Array.isArray(produto.precos) && produto.precos.length ? produto.precos : null;
+};
+
+// Preço da opção escolhida (ou o preço normal, se a peça não tem opções).
+window.precoDaOpcao = function (produto, rotulo) {
+  const ops = window.opcoesDePreco(produto);
+  if (!ops) return Number(produto.preco) || 0;
+  const o = ops.find((x) => x.rotulo === rotulo) || ops[0];
+  return Number(o.valor) || 0;
+};
+
+// Menor valor entre as opções (para "a partir de").
+window.menorPreco = function (produto) {
+  const ops = window.opcoesDePreco(produto);
+  return ops ? Math.min(...ops.map((o) => Number(o.valor))) : Number(produto.preco) || 0;
+};
+
+// Botões "Par R$ 60,00 | Unidade R$ 45,00 | Trio R$ 85,00" (um grupo de rádio).
+window.htmlOpcoesPreco = function (produto, nomeGrupo, selecionado) {
+  const ops = window.opcoesDePreco(produto);
+  if (!ops) return "";
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const moeda = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const marcado = ops.some((o) => o.rotulo === selecionado) ? selecionado : ops[0].rotulo;
+  return `<div class="preco-opcoes" role="radiogroup" aria-label="Como deseja comprar">${ops.map((o) => `
+    <label class="preco-opcao">
+      <input type="radio" name="${esc(nomeGrupo)}" value="${esc(o.rotulo)}"${o.rotulo === marcado ? " checked" : ""}>
+      <span><b>${esc(o.rotulo)}</b><em>${moeda(o.valor)}</em></span>
+    </label>`).join("")}</div>`;
 };

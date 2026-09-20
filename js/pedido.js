@@ -10,7 +10,7 @@ function preencherSelectProdutos(select, produtos, idPreSelecionado) {
     grupos[p.categoria].push(p);
   });
 
-  const nomesCategoria = { aneis: "Anéis", colares: "Colares", brincos: "Brincos", pulseiras: "Pulseiras" };
+  const nomesCategoria = { aliancas: "Alianças", aneis: "Anéis", colares: "Colares", brincos: "Brincos", pulseiras: "Pulseiras" };
 
   Object.entries(grupos).forEach(([categoria, itens]) => {
     const optgroup = document.createElement("optgroup");
@@ -18,7 +18,8 @@ function preencherSelectProdutos(select, produtos, idPreSelecionado) {
     itens.forEach((p) => {
       const option = document.createElement("option");
       option.value = p.id;
-      option.textContent = `R$ ${p.preco.toFixed(2).replace(".", ",")} — ${p.nome}`;
+      const valor = `R$ ${window.menorPreco(p).toFixed(2).replace(".", ",")}`;
+      option.textContent = `${window.opcoesDePreco(p) ? "a partir de " : ""}${valor} — ${p.nome}`;
       if (p.id === idPreSelecionado) option.selected = true;
       optgroup.appendChild(option);
     });
@@ -58,7 +59,7 @@ function opcoesReaisDoProduto(produto) {
   // Alianças/anéis: usa os tamanhos reais cadastrados no produto (numeração real
   // disponível), em vez da lista genérica 14–24. Quando o produto tem versão
   // feminina e masculina, monta dois grupos separados.
-  if (produto.categoria !== "aneis") return null;
+  if (produto.categoria !== "aneis" && produto.categoria !== "aliancas") return null;
 
   const fem = Array.isArray(produto.tamanhosFeminino) ? expandirTamanhos(produto.tamanhosFeminino.filter((t) => !ehPlaceholder(t))) : [];
   const masc = Array.isArray(produto.tamanhosMasculino) ? expandirTamanhos(produto.tamanhosMasculino.filter((t) => !ehPlaceholder(t))) : [];
@@ -186,6 +187,40 @@ function formatoPrecoPedido(valor) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// ---------- Valor por tipo de venda (Par / Unidade / Trio) ----------
+let opcaoPrecoEscolhida = "";
+
+function rotuloEscolhido(produto) {
+  return window.opcoesDePreco(produto) ? opcaoPrecoEscolhida : "";
+}
+
+function precoEscolhido(produto) {
+  return window.precoDaOpcao(produto, opcaoPrecoEscolhida);
+}
+
+function renderizarOpcoesPreco(produto, opcaoInicial) {
+  const campo = document.getElementById("campo-preco-opcao");
+  const caixa = document.getElementById("preco-opcoes-pedido");
+  if (!campo || !caixa) return;
+  if (!window.opcoesDePreco(produto)) {
+    opcaoPrecoEscolhida = "";
+    campo.hidden = true;
+    caixa.innerHTML = "";
+    return;
+  }
+  caixa.innerHTML = window.htmlOpcoesPreco(produto, "opcao-preco", opcaoInicial);
+  const marcada = caixa.querySelector("input:checked");
+  opcaoPrecoEscolhida = marcada ? marcada.value : "";
+  campo.hidden = false;
+  caixa.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("change", () => {
+      opcaoPrecoEscolhida = input.value;
+      const preco = document.getElementById("pedido-media-preco");
+      if (preco) preco.textContent = formatoPrecoPedido(precoEscolhido(produto));
+    });
+  });
+}
+
 function renderizarMedia(produto) {
   const media = document.getElementById("pedido-media");
   const img = document.getElementById("pedido-foto-img");
@@ -207,7 +242,7 @@ function renderizarMedia(produto) {
   nome.textContent = produto.nome;
   codigo.textContent = produto.codigo ? `Cód.: ${produto.codigo}` : "";
   codigo.hidden = !produto.codigo;
-  preco.textContent = formatoPrecoPedido(produto.preco);
+  preco.textContent = formatoPrecoPedido(precoEscolhido(produto));
 
   let indiceAtual = 0;
 
@@ -270,7 +305,7 @@ function iniciarModoSacola(form, erroBox) {
       nome.textContent = item.nome;
       const info = document.createElement("p");
       info.className = "ps-info";
-      info.textContent = `${formatoPrecoPedido(item.preco)}${item.detalhes ? " · " + item.detalhes : ""}`;
+      info.textContent = `${item.opcao ? item.opcao + " · " : ""}${formatoPrecoPedido(item.preco)}${item.detalhes ? " · " + item.detalhes : ""}`;
       texto.append(nome, info);
       li.append(img, texto);
       lista.appendChild(li);
@@ -306,7 +341,7 @@ function iniciarModoSacola(form, erroBox) {
       produto_nome: item.nome,
       categoria: item.categoria || "",
       preco: item.preco,
-      detalhes: (item.detalhes || "").trim() || null,
+      detalhes: [item.opcao ? `Tipo: ${item.opcao}` : "", (item.detalhes || "").trim()].filter(Boolean).join(" · ") || null,
     }));
 
     const botao = form.querySelector('button[type="submit"]');
@@ -353,11 +388,13 @@ async function iniciarFormularioPedido() {
   preencherSelectProdutos(selectProduto, produtos, params.get("produto"));
 
   const produtoInicial = produtos.find((p) => p.id === params.get("produto"));
+  renderizarOpcoesPreco(produtoInicial || null, params.get("opcao"));
   renderizarVariacoes(produtoInicial || null);
   renderizarMedia(produtoInicial || null);
 
   selectProduto.addEventListener("change", () => {
     const produto = produtos.find((p) => p.id === selectProduto.value);
+    renderizarOpcoesPreco(produto || null);
     renderizarVariacoes(produto || null);
     renderizarMedia(produto || null);
   });
@@ -376,8 +413,8 @@ async function iniciarFormularioPedido() {
       produto_id: produtoEscolhido.id,
       produto_nome: produtoEscolhido.nome,
       categoria: produtoEscolhido.categoria,
-      preco: produtoEscolhido.preco,
-      detalhes: (dados.get("detalhes") || "").trim() || null,
+      preco: precoEscolhido(produtoEscolhido),
+      detalhes: [rotuloEscolhido(produtoEscolhido) ? `Tipo: ${rotuloEscolhido(produtoEscolhido)}` : "", (dados.get("detalhes") || "").trim()].filter(Boolean).join(" · ") || null,
       observacoes: (dados.get("observacoes") || "").trim() || null,
       status: "Pendente",
     };

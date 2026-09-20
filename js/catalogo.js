@@ -1,5 +1,6 @@
 const CATEGORIAS = {
   todos: "Todos",
+  aliancas: "Alianças",
   aneis: "Anéis",
   colares: "Colares",
   brincos: "Brincos",
@@ -21,7 +22,9 @@ function cardProduto(produto) {
     </div>
     <h3>${produto.nome}</h3>
     <p class="produto-material">${produto.material}</p>
-    <p class="produto-preco">${formatoPreco(produto.preco)}</p>
+    ${window.opcoesDePreco(produto)
+      ? window.htmlOpcoesPreco(produto, `preco-${produto.id}`)
+      : `<p class="produto-preco">${formatoPreco(produto.preco)}</p>`}
     ${produto.codigo ? `<p class="produto-codigo">Cód.: ${produto.codigo}</p>` : ""}
     <a class="btn btn-line" href="pedido.html?produto=${encodeURIComponent(produto.id)}">Pedir esta peça</a>
     <button type="button" class="btn btn-sacola" data-sacola-add data-produto-id="${produto.id}">Adicionar à sacola</button>
@@ -89,6 +92,20 @@ async function iniciarCatalogo() {
 
   render();
   iniciarLightbox(produtos, grid);
+}
+
+// Opção de valor marcada (Par / Unidade / Trio) dentro de um cartão ou do painel de detalhes.
+function opcaoEscolhida(raiz) {
+  const marcada = raiz && raiz.querySelector(".preco-opcoes input:checked");
+  return marcada ? marcada.value : "";
+}
+
+// Ao trocar a opção, o link "Pedir esta peça" passa a levar a opção escolhida.
+function atualizarLinkPedido(raiz, produto) {
+  const link = raiz && raiz.querySelector('a[href^="pedido.html"]');
+  if (!link || !produto) return;
+  const opcao = opcaoEscolhida(raiz);
+  link.href = `pedido.html?produto=${encodeURIComponent(produto.id)}${opcao ? `&opcao=${encodeURIComponent(opcao)}` : ""}`;
 }
 
 const ROTULOS_SPEC = {
@@ -165,7 +182,9 @@ function iniciarLightbox(produtos, grid) {
     info.innerHTML = `<div class="detalhe-info-conteudo">
       <h3>${produto.nome}</h3>
       ${produto.codigo ? `<p class="detalhe-codigo">Cód.: ${produto.codigo}</p>` : ""}
-      <p class="detalhe-preco">${formatoPreco(produto.preco)}</p>
+      ${window.opcoesDePreco(produto)
+        ? window.htmlOpcoesPreco(produto, `detalhe-preco-${produto.id}`)
+        : `<p class="detalhe-preco">${formatoPreco(produto.preco)}</p>`}
       <p class="detalhe-material">${produto.material}</p>
       ${specs ? `<div class="detalhe-specs">${specs}</div>` : ""}
       ${tamanhosHTML ? `<div class="detalhe-tamanhos">${tamanhosHTML}</div>` : ""}
@@ -226,7 +245,7 @@ function iniciarLightbox(produtos, grid) {
   function adicionarNaSacola(botao) {
     const produto = produtos.find((p) => p.id === botao.dataset.produtoId);
     if (!produto || !window.Sacola) return;
-    window.Sacola.adicionar(produto);
+    window.Sacola.adicionar(produto, opcaoEscolhida(botao.closest(".produto-card, .detalhe-info-conteudo")));
     const textoOriginal = botao.textContent;
     botao.textContent = "✓ Adicionada";
     botao.disabled = true;
@@ -238,10 +257,22 @@ function iniciarLightbox(produtos, grid) {
     if (botao) adicionarNaSacola(botao);
   });
 
+  info.addEventListener("change", (evento) => {
+    if (!evento.target.closest(".preco-opcoes")) return;
+    atualizarLinkPedido(info.firstElementChild, produtoAtual);
+  });
+
+  grid.addEventListener("change", (evento) => {
+    if (!evento.target.closest(".preco-opcoes")) return;
+    const cartao = evento.target.closest(".produto-card");
+    if (cartao) atualizarLinkPedido(cartao, produtos.find((p) => p.id === cartao.dataset.produtoId));
+  });
+
   grid.addEventListener("click", (evento) => {
     const botaoSacola = evento.target.closest("[data-sacola-add]");
     if (botaoSacola) { adicionarNaSacola(botaoSacola); return; }
     if (evento.target.closest("a.btn")) return;
+    if (evento.target.closest(".preco-opcoes")) return; // escolher Par/Unidade/Trio não abre a foto
     const cartao = evento.target.closest(".produto-card");
     if (!cartao) return;
     const produto = produtos.find((p) => p.id === cartao.dataset.produtoId);

@@ -20,6 +20,10 @@ const LOJA = {
 // categoria, adicione um campo "variacoes": ["Opção 1", "Opção 2"] nele
 // dentro de data/produtos.json — isso substitui a lista abaixo só pra ele.
 const VARIACOES_POR_CATEGORIA = {
+  aliancas: {
+    rotulo: "Aro (tamanho)",
+    opcoes: ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33"],
+  },
   aneis: {
     rotulo: "Aro (tamanho)",
     opcoes: ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"],

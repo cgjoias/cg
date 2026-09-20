@@ -62,13 +62,18 @@
     }
   }
 
-  function adicionar(produto) {
+  // opcao (opcional): tipo de venda escolhido — "Par", "Unidade", "Trio"... — para peças
+  // que têm valores diferentes por tipo. Sem opção, vale o preço normal da peça.
+  function adicionar(produto, opcao) {
     if (!produto || !produto.id) return;
+    const ops = Array.isArray(produto.precos) && produto.precos.length ? produto.precos : null;
+    const escolhida = ops ? (ops.find((o) => o.rotulo === opcao) || ops[0]) : null;
     itens.push({
       uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       id: produto.id,
       nome: produto.nome,
-      preco: Number(produto.preco),
+      preco: escolhida ? Number(escolhida.valor) : Number(produto.preco),
+      opcao: escolhida ? escolhida.rotulo : "",
       imagem: produto.imagem || (Array.isArray(produto.imagens) ? produto.imagens[0] : ""),
       categoria: produto.categoria || "",
       detalhes: "",
@@ -76,7 +81,7 @@
     gravar();
     atualizarBadge(true);
     renderizarPainel();
-    mostrarToast(`${produto.nome} — adicionada à sacola`);
+    mostrarToast(`${produto.nome}${escolhida ? ` (${escolhida.rotulo})` : ""} — adicionada à sacola`);
   }
 
   function remover(uid) {
@@ -123,7 +128,7 @@
 
       const preco = document.createElement("p");
       preco.className = "sacola-item-preco";
-      preco.textContent = formatar(item.preco);
+      preco.textContent = `${item.opcao ? item.opcao + " · " : ""}${formatar(item.preco)}`;
 
       const campo = document.createElement("input");
       campo.type = "text";

@@ -5,8 +5,9 @@
 // logado consegue gravar (regras RLS em schema-produtos.sql).
 // ============================================================
 (function () {
+  const VERSAO_PAINEL = "20260920u";
   const BUCKET = "produtos";
-  const CATEGORIAS = { aneis: "Anéis", colares: "Colares", brincos: "Brincos", pulseiras: "Pulseiras" };
+  const CATEGORIAS = { aliancas: "Alianças", aneis: "Anéis", colares: "Colares", brincos: "Brincos", pulseiras: "Pulseiras" };
   const TEXTOS = ["material", "descricao", "codigo", "cor", "pedra", "largura", "formato", "acabamento", "detalhes"];
   const LISTAS = ["tamanhos", "tamanhos_feminino", "tamanhos_masculino"];
   const XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
@@ -20,6 +21,9 @@
     { k: "categoria", t: "Categoria", w: 12 },
     { k: "material", t: "Material", w: 22 },
     { k: "preco", t: "Preço", w: 10 },
+    { k: "preco_par", t: "Preço par", w: 10 },
+    { k: "preco_unidade", t: "Preço unidade", w: 12 },
+    { k: "preco_trio", t: "Preço trio", w: 10 },
     { k: "descricao", t: "Descrição", w: 50 },
     { k: "codigo", t: "Código", w: 16 },
     { k: "cor", t: "Cor", w: 12 },
@@ -35,6 +39,16 @@
   ];
   const ROTULO = Object.fromEntries(COLUNAS.map((c) => [c.k, c.t.replace(/ \(.*\)/, "")]));
   ROTULO.foto = "Foto";
+  ROTULO.precos = "Valores (par / unidade / trio)";
+
+  // Valores por tipo de venda. Alianças têm 3: Par, Unidade e Trio. Ficam no banco na coluna
+  // "precos" como [{ rotulo: "Par", valor: 60 }, ...]; o "preco" da peça vira o da primeira opção.
+  const TIPOS_PRECO = [
+    { k: "preco_par", r: "Par" },
+    { k: "preco_unidade", r: "Unidade" },
+    { k: "preco_trio", r: "Trio" },
+  ];
+  const ehTipoPreco = (k) => TIPOS_PRECO.some((t) => t.k === k);
 
   let produtos = [];
   let ed = null; // estado do editor aberto
@@ -44,6 +58,20 @@
   const moeda = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const txtLista = (v) => (Array.isArray(v) ? v.join(", ") : "");
+  const listaPrecos = (v) => (Array.isArray(v) ? v.filter((o) => o && o.rotulo && Number(o.valor) > 0) : []);
+  const textoPrecos = (v) => listaPrecos(v).map((o) => `${o.rotulo} ${moeda(o.valor)}`).join(" · ");
+  const precoDoTipo = (p, rotulo) => {
+    const o = listaPrecos(p && p.precos).find((x) => norm(x.rotulo) === norm(rotulo));
+    return o ? Number(o.valor) : null;
+  };
+  const precosIguais = (a, b) => JSON.stringify(listaPrecos(a).map((o) => [norm(o.rotulo), Number(o.valor)])) === JSON.stringify(listaPrecos(b).map((o) => [norm(o.rotulo), Number(o.valor)]));
+
+  // Mensagem amigável quando o banco ainda não tem a coluna "precos".
+  function msgErroBanco(msg) {
+    return /precos/i.test(String(msg || ""))
+      ? String(msg) + " — falta rodar o arquivo migracao-valores-por-tipo.sql no Supabase (SQL Editor). É só uma vez."
+      : String(msg || "");
+  }
 
   function aviso(texto, tipo) {
     const el = $("prod-msg");
@@ -85,7 +113,7 @@
   const proximaOrdem = () => produtos.reduce((m, p) => Math.max(m, p.ordem || 0), 0) + 1;
 
   function linhaVazia() {
-    const o = { id: null, ordem: 0, ativo: true, categoria: "aneis", nome: "", preco: 0, imagens: [], variacoes: null };
+    const o = { id: null, ordem: 0, ativo: true, categoria: "aliancas", nome: "", preco: 0, imagens: [], variacoes: null };
     TEXTOS.forEach((k) => (o[k] = null));
     LISTAS.forEach((k) => (o[k] = null));
     return o;
@@ -163,7 +191,7 @@
         <div class="prod-thumb"><img src="${esc(foto)}" alt="" loading="lazy"></div>
         <div class="prod-info">
           <h3>${esc(p.nome)}</h3>
-          <p class="prod-sub">${esc(CATEGORIAS[p.categoria] || p.categoria)} · ${moeda(p.preco)}</p>
+          <p class="prod-sub">${esc(CATEGORIAS[p.categoria] || p.categoria)} · ${esc(listaPrecos(p.precos).length ? textoPrecos(p.precos) : moeda(p.preco))}</p>
           <p class="prod-sub">${(p.imagens || []).length} foto(s) · ${p.ativo ? '<span class="status-tag status-confirmado">✓ Confirmado</span>' : '<span class="status-tag status-pendente">Aguardando confirmação</span>'}</p>
           <button type="button" class="prod-conf" data-conf="${esc(p.id)}">${p.ativo ? "Desfazer confirmação" : "✓ Confirmar"}</button>
         </div>
@@ -262,7 +290,7 @@
 
   function abrirEditor(p) {
     ed = { p, fotos: p ? [...(p.imagens || [])] : [], enviadas: [], removidas: [] };
-    const v = p || { ativo: true, categoria: "aneis", preco: "" };
+    const v = p || { ativo: true, categoria: "aliancas", preco: "" };
     const opcoes = Object.entries(CATEGORIAS).map(([k, n]) => `<option value="${k}"${v.categoria === k ? " selected" : ""}>${n}</option>`).join("");
     abrirModal(`
       <h2>${p ? "Editar peça" : "Novo produto"}</h2>
@@ -271,6 +299,17 @@
         <div class="field"><label for="f-categoria">Categoria *</label><select id="f-categoria">${opcoes}</select></div>
         ${campo("preco", "Preço (R$) *", p ? String(v.preco).replace(".", ",") : "", 'inputmode="decimal" placeholder="129,90"')}
       </div>
+      <details class="prod-mais"${listaPrecos(v.precos).length ? " open" : ""}>
+        <summary>Valores por tipo de venda — Par / Unidade / Trio (alianças)</summary>
+        <p class="field-hint">Preencha só se a peça tem valores diferentes por tipo. No site, o cliente escolhe Par, Unidade ou Trio. Se usar isto, o campo Preço acima passa a valer o do primeiro tipo preenchido. Deixe tudo vazio para usar um preço único.</p>
+        <div class="field-row">
+          ${campo("preco_par", "Par (R$)", precoDoTipo(v, "Par") != null ? String(precoDoTipo(v, "Par")).replace(".", ",") : "", 'inputmode="decimal" placeholder="60,00"')}
+          ${campo("preco_unidade", "Unidade (R$)", precoDoTipo(v, "Unidade") != null ? String(precoDoTipo(v, "Unidade")).replace(".", ",") : "", 'inputmode="decimal" placeholder="45,00"')}
+        </div>
+        <div class="field-row">
+          ${campo("preco_trio", "Trio (R$)", precoDoTipo(v, "Trio") != null ? String(precoDoTipo(v, "Trio")).replace(".", ",") : "", 'inputmode="decimal" placeholder="85,00"')}
+        </div>
+      </details>
       <div class="field-row">
         ${campo("material", "Material", v.material)}
         ${campo("codigo", "Código", v.codigo)}
@@ -344,9 +383,18 @@
   async function salvar(botao) {
     erroForm("");
     const nome = $("f-nome").value.trim();
-    const preco = lerNumero($("f-preco").value);
+    let preco = lerNumero($("f-preco").value);
     if (!nome) return erroForm("Informe o nome da peça.");
-    if (preco === null) return erroForm("Informe um preço válido, por exemplo 129,90.");
+    const precos = [];
+    for (const t of TIPOS_PRECO) {
+      const cru = $("f-" + t.k).value.trim();
+      if (!cru) continue;
+      const n = lerNumero(cru);
+      if (n === null || n <= 0) return erroForm(`Valor de "${t.r}" inválido. Use um número, por exemplo 60,00.`);
+      precos.push({ rotulo: t.r, valor: n });
+    }
+    if (precos.length) preco = precos[0].valor;
+    else if (preco === null) return erroForm("Informe um preço válido, por exemplo 129,90.");
 
     const dados = {
       nome, preco,
@@ -357,6 +405,9 @@
     };
     TEXTOS.forEach((k) => (dados[k] = $("f-" + k).value.trim() || null));
     LISTAS.forEach((k) => (dados[k] = listaDeTexto($("f-" + k).value)));
+    // Só manda "precos" quando há o que gravar (ou limpar), para não exigir a coluna nova de quem não usa.
+    if (precos.length) dados.precos = precos;
+    else if (ed.p && listaPrecos(ed.p.precos).length) dados.precos = null;
 
     botao.disabled = true;
     botao.textContent = "Salvando...";
@@ -370,7 +421,7 @@
     botao.disabled = false;
     botao.textContent = "Salvar";
     if (resp.error || !resp.data || !resp.data.length) {
-      return erroForm("Não foi possível salvar: " + (resp.error ? resp.error.message : "sua sessão pode ter expirado. Saia e entre de novo."));
+      return erroForm("Não foi possível salvar: " + (resp.error ? msgErroBanco(resp.error.message) : "sua sessão pode ter expirado. Saia e entre de novo."));
     }
     await apagarFotos(ed.removidas.filter((u) => !ed.fotos.includes(u)));
     ed = null;
@@ -573,6 +624,66 @@
     carregar();
   }
 
+  // ---------- Valores das alianças (Par / Unidade / Trio) direto no painel ----------
+  // Atalho que não depende da planilha: aplica os 3 valores em TODAS as peças cujo nome
+  // começa com "Aliança" e já as coloca na categoria Alianças. Serve também para mudar
+  // o valor depois (é só abrir de novo, digitar e aplicar).
+  const ehAlianca = (p) => /^alian[cç]a/i.test(norm(p.nome));
+
+  async function verValoresAliancas() {
+    await carregar();
+    const alvo = produtos.filter(ehAlianca);
+    if (!alvo.length) { aviso("Não achei nenhuma peça com nome começando por ALIANÇA.", "erro"); return; }
+    const atual = (r) => { const a = alvo.find((p) => precoDoTipo(p, r) != null); return a ? String(precoDoTipo(a, r)).replace(".", ",") : ""; };
+    abrirModal(`
+      <h2>Valores das alianças</h2>
+      <p><strong>${alvo.length}</strong> peça(s) cujo nome começa com ALIANÇA vão receber estes três valores e ir para a categoria <strong>Alianças</strong>. O cliente escolhe Par, Unidade ou Trio no site.</p>
+      <div class="field-row">
+        ${campo("va_par", "Par (R$)", atual("Par") || "60", 'inputmode="decimal"')}
+        ${campo("va_unidade", "Unidade (R$)", atual("Unidade") || "45", 'inputmode="decimal"')}
+      </div>
+      <div class="field-row">${campo("va_trio", "Trio (R$)", atual("Trio") || "85", 'inputmode="decimal"')}</div>
+      <p id="f-erro" class="prod-msg erro" hidden></p>
+      <div class="prod-botoes">
+        <button type="button" class="btn btn-primary" id="va-aplicar">Aplicar em ${alvo.length} peça(s)</button>
+        <button type="button" class="btn btn-line" data-imp="cancelar">Cancelar</button>
+      </div>`);
+    $("va-aplicar").addEventListener("click", (e) => aplicarValoresAliancas(e.currentTarget, alvo));
+  }
+
+  async function aplicarValoresAliancas(botao, alvo) {
+    erroForm("");
+    const precos = [];
+    for (const [id, r] of [["va_par", "Par"], ["va_unidade", "Unidade"], ["va_trio", "Trio"]]) {
+      const n = lerNumero($("f-" + id).value);
+      if (n === null || n <= 0) return erroForm(`Informe um valor válido para "${r}", por exemplo 60,00.`);
+      precos.push({ rotulo: r, valor: n });
+    }
+    botao.disabled = true;
+    botao.textContent = "Aplicando...";
+    const ids = alvo.map((p) => p.id);
+    let feitas = 0;
+    for (let i = 0; i < ids.length; i += 50) {
+      const { data, error } = await db.from("produtos")
+        .update({ precos, preco: precos[0].valor, categoria: "aliancas", updated_at: new Date().toISOString() })
+        .in("id", ids.slice(i, i + 50)).select();
+      if (error) {
+        botao.disabled = false;
+        botao.textContent = "Tentar de novo";
+        return erroForm("Erro ao gravar: " + msgErroBanco(error.message));
+      }
+      feitas += (data || []).length;
+    }
+    if (!feitas) {
+      botao.disabled = false;
+      botao.textContent = "Tentar de novo";
+      return erroForm("Nada foi alterado — sua sessão pode ter expirado. Saia e entre de novo.");
+    }
+    fecharModal();
+    aviso(`Pronto: ${feitas} aliança(s) com Par ${moeda(precos[0].valor)}, Unidade ${moeda(precos[1].valor)} e Trio ${moeda(precos[2].valor)}, na categoria Alianças.`);
+    carregar();
+  }
+
   // ---------- Excel ----------
   async function carregarXLSX() {
     if (window.XLSX) return window.XLSX;
@@ -593,22 +704,24 @@
         if (c.k === "categoria") return CATEGORIAS[p.categoria] || p.categoria;
         if (c.k === "ativo") return p.ativo ? "Sim" : "Não";
         if (c.k === "preco") return Number(p.preco);
+        if (ehTipoPreco(c.k)) return precoDoTipo(p, TIPOS_PRECO.find((t) => t.k === c.k).r) ?? "";
         if (LISTAS.includes(c.k)) return txtLista(p[c.k]);
         return p[c.k] ?? "";
       }));
       const ws = X.utils.aoa_to_sheet([COLUNAS.map((c) => c.t), ...linhas]);
       ws["!cols"] = COLUNAS.map((c) => ({ wch: c.w }));
-      const colPreco = COLUNAS.findIndex((c) => c.k === "preco");
-      linhas.forEach((_, i) => {
-        const cel = ws[X.utils.encode_cell({ r: i + 1, c: colPreco })];
+      const colsPreco = COLUNAS.map((c, i) => (c.k === "preco" || ehTipoPreco(c.k) ? i : -1)).filter((i) => i >= 0);
+      linhas.forEach((_, i) => colsPreco.forEach((col) => {
+        const cel = ws[X.utils.encode_cell({ r: i + 1, c: col })];
         if (cel) cel.z = "#,##0.00";
-      });
+      }));
       const ajuda = X.utils.aoa_to_sheet([
         ["Como usar esta planilha"],
         ["1. Altere o que quiser (preço, nome, descrição...). Célula vazia = mantém o que já está no site."],
         ["2. NÃO altere a coluna ID: é ela que identifica cada peça."],
         ["3. Para cadastrar uma peça nova, acrescente uma linha com o ID vazio e preencha Nome, Categoria e Preço."],
-        ["4. Categoria: Anéis, Colares, Brincos ou Pulseiras. Mostrar no site: Sim ou Não."],
+        ["4. Categoria: Alianças, Anéis, Colares, Brincos ou Pulseiras. Mostrar no site: Sim ou Não."],
+        ["   Alianças com valores por tipo: preencha Preço par, Preço unidade e Preço trio (o cliente escolhe no site). Vazio = mantém. Nessas linhas, a coluna Preço passa a valer o do par."],
         ["5. Salve o arquivo e, na aba Produtos, clique em Importar planilha. Você verá uma prévia antes de aplicar."],
         ["6. Fotos não vão pela planilha: envie pela tela de cada peça."],
       ]);
@@ -622,7 +735,7 @@
     }
   }
 
-  const CAT_ALIAS = { aneis: "aneis", anel: "aneis", colares: "colares", colar: "colares", brincos: "brincos", brinco: "brincos", pulseiras: "pulseiras", pulseira: "pulseiras" };
+  const CAT_ALIAS = { aliancas: "aliancas", alianca: "aliancas", aneis: "aneis", anel: "aneis", colares: "colares", colar: "colares", brincos: "brincos", brinco: "brincos", pulseiras: "pulseiras", pulseira: "pulseiras" };
 
   function lerCelulas(get, mapa) {
     const valores = {}, erros = [];
@@ -632,10 +745,13 @@
       if (String(cru).trim() === "") return; // vazio = mantém
       if (k === "categoria") {
         const c = CAT_ALIAS[norm(cru)];
-        c ? (valores.categoria = c) : erros.push(`Categoria "${cru}" inválida (use Anéis, Colares, Brincos ou Pulseiras)`);
+        c ? (valores.categoria = c) : erros.push(`Categoria "${cru}" inválida (use Alianças, Anéis, Colares, Brincos ou Pulseiras)`);
       } else if (k === "preco") {
         const n = lerNumero(cru);
         n === null ? erros.push(`Preço "${cru}" inválido`) : (valores.preco = n);
+      } else if (ehTipoPreco(k)) {
+        const n = lerNumero(cru);
+        n === null ? erros.push(`${ROTULO[k]} "${cru}" inválido`) : (valores[k] = n);
       } else if (k === "ativo") {
         const t = norm(cru);
         if (["sim", "s", "true", "1", "yes"].includes(t)) valores.ativo = true;
@@ -653,9 +769,24 @@
   const igual = (k, a, b) => {
     if (LISTAS.includes(k)) return JSON.stringify(a || []) === JSON.stringify(b || []);
     if (k === "preco") return Number(a) === Number(b);
+    if (k === "precos") return precosIguais(a, b);
     if (k === "ativo") return !!a === !!b;
     return (a ?? "") === (b ?? "");
   };
+
+  // As 3 colunas da planilha (Preço par / unidade / trio) viram o campo "precos" do banco.
+  // Célula vazia = mantém o valor que a peça já tem; 0 = remove aquele tipo. O "preco" da peça
+  // acompanha o primeiro tipo (Par), para continuar valendo em tudo que usa um preço só.
+  function mesclarPrecos(valores, base) {
+    const dadas = TIPOS_PRECO.filter((t) => valores[t.k] !== undefined);
+    if (!dadas.length) return;
+    const mapa = new Map(listaPrecos(base && base.precos).map((o) => [norm(o.rotulo), Number(o.valor)]));
+    dadas.forEach((t) => (valores[t.k] > 0 ? mapa.set(norm(t.r), valores[t.k]) : mapa.delete(norm(t.r))));
+    const precos = TIPOS_PRECO.filter((t) => mapa.has(norm(t.r))).map((t) => ({ rotulo: t.r, valor: mapa.get(norm(t.r)) }));
+    TIPOS_PRECO.forEach((t) => delete valores[t.k]);
+    valores.precos = precos.length ? precos : null;
+    if (precos.length) valores.preco = precos[0].valor;
+  }
 
   // chaves (opcional): chaves[i] identifica a peça da linha i na aba CATALOGO — é o que
   // liga cada linha à foto colada no Excel (sem depender do código, que pode repetir).
@@ -676,6 +807,7 @@
         const atual = porId.get(id);
         if (!atual) { r.erros.push(`${ref}: o ID "${id}" não existe. Não altere a coluna ID.`); continue; }
         if (erros.length) { r.erros.push(`${ref} (${atual.nome}): ${erros.join("; ")}`); continue; }
+        mesclarPrecos(valores, atual);
         const mudancas = Object.keys(valores).filter((k) => !igual(k, atual[k], valores[k]))
           .map((k) => ({ k, de: atual[k], para: valores[k] }));
         if (!mudancas.length) { r.iguais++; r.iguaisLista.push({ atual, chave }); continue; }
@@ -683,6 +815,7 @@
         r.alterados.push({ atual, valores: soMudou, mudancas, chave });
       } else {
         if (erros.length) { r.erros.push(`${ref}: ${erros.join("; ")}`); continue; }
+        mesclarPrecos(valores, null);
         if (!valores.nome || !valores.categoria || valores.preco === undefined) {
           r.erros.push(`${ref}: para cadastrar peça nova preencha Nome, Categoria e Preço (e deixe o ID vazio).`);
           continue;
@@ -700,6 +833,7 @@
 
   function formatarValor(k, v) {
     if (k === "preco") return moeda(v);
+    if (k === "precos") return textoPrecos(v) || "(vazio)";
     if (k === "foto") return `${v} foto(s)`;
     if (k === "ativo") return v ? "Sim" : "Não";
     if (k === "categoria") return CATEGORIAS[v] || v;
@@ -751,6 +885,22 @@
     if (mapa[codigo]) return mapa[codigo];
     const base = codigo.replace(/\.\d+$/, "");
     return mapa[base] || null;
+  }
+
+  // Lê as linhas "Valor  |  Par: 60R$", "Unidade: 45R$" e "Trio: 85R$" do bloco da peça.
+  function catalogoGetPrecos(bloco) {
+    const achados = {};
+    for (const linha of bloco) {
+      for (const c of linha) {
+        if (typeof c !== "string") continue;
+        const m = /^\s*(par|unidade|trio)\s*:\s*(?:R\$)?\s*([\d.,]+)\s*(?:R\$)?\s*$/i.exec(c);
+        if (m) {
+          const n = lerNumero(m[2]);
+          if (n !== null && n > 0) achados[norm(m[1])] = n;
+        }
+      }
+    }
+    return { par: achados.par ?? "", unidade: achados.unidade ?? "", trio: achados.trio ?? "" };
   }
 
   const CAT_LABELS = ["especificacoes", "acabamento", "conforto", "largura", "cor", "formato externo", "pedra", "detalhes", "numeracoes disponiveis"];
@@ -820,6 +970,7 @@
         formato: catalogoGetField(bloco, "Formato Externo"),
         pedra: catalogoGetField(bloco, "Pedra"),
         detalhes: catalogoGetField(bloco, "Detalhes"),
+        valores: catalogoGetPrecos(bloco),
       });
     });
     return { produtos, posicoes };
@@ -857,7 +1008,8 @@
   // "mostrar no site" (a planilha de estoque não tem esses dados; célula vazia = mantém) —
   // assim reimportar nunca zera o preço nem esconde uma peça que você já ajustou. O resto
   // (nome, código, cor, pedra, largura, formato, acabamento, detalhes, numerações, foto)
-  // segue a planilha.
+  // segue a planilha. Exceção: os valores Par / Unidade / Trio da aba CATALOGO (alianças) são
+  // lidos e gravados em "precos" — e aí o preço da peça passa a ser o do Par.
   function converterPlanilhaOriginal(X, wb) {
     const { produtos: catalogo, posicoes } = extrairCatalogo(X, wb);
     if (!catalogo.length) return null;
@@ -874,11 +1026,14 @@
       const porChave = {
         id: existente ? existente.id : "",
         nome: p.nome,
-        categoria: existente ? "" : "Anéis",
+        // Peça cujo nome começa com "ALIANÇA" vai para a categoria Alianças (inclusive as que já
+        // estavam como Anéis). Os demais anéis: novos entram como Anéis; os existentes ficam como estão.
+        categoria: /^alian[cç]a/i.test(norm(p.nome)) ? "Alianças" : (existente ? "" : "Anéis"),
         material: existente ? "" : "Aço Cirúrgico",
         preco: existente ? "" : 0,
         descricao: "", codigo: p.codigo, cor: p.cor, pedra: p.pedra, largura: p.largura,
         formato: p.formato, acabamento: p.acabamento, detalhes,
+        preco_par: p.valores.par, preco_unidade: p.valores.unidade, preco_trio: p.valores.trio,
         tamanhos: est.tamanhos || "", tamanhos_feminino: "", tamanhos_masculino: "",
         ativo: existente ? "" : "Não",
       };
@@ -1074,7 +1229,7 @@
         }
         mostrarPrevia(pendente);
         const ja = original.qtdJaExistiam || 0;
-        aviso(`Planilha de controle de estoque reconhecida${avisoFotos}. O painel vai ficar igual à planilha: ${original.linhas.length - 1} peça(s) — ${ja} já existem (atualizadas, sem duplicar), ${pendente.novos.length} nova(s) e ${pendente.remover.length} a remover. Preço e visibilidade das que já existem ficam como estão; as novas entram como Anéis, preço 0 e aguardando confirmação (ocultas do site até você confirmar).`, falhaFotos ? "erro" : "ok");
+        aviso(`Planilha de controle de estoque reconhecida${avisoFotos}. O painel vai ficar igual à planilha: ${original.linhas.length - 1} peça(s) — ${ja} já existem (atualizadas, sem duplicar), ${pendente.novos.length} nova(s) e ${pendente.remover.length} a remover. Visibilidade das que já existem fica como está, e o preço só muda nas peças que têm Par/Unidade/Trio na aba CATALOGO; as alianças vão para a categoria Alianças, as outras novas entram como Anéis, com preço 0 e aguardando confirmação (ocultas do site até você confirmar).`, falhaFotos ? "erro" : "ok");
         return;
       }
       pendente = analisar(linhas, mapa);
@@ -1170,7 +1325,7 @@
         botao.disabled = false;
         botao.textContent = "Tentar de novo";
         const el = $("f-erro");
-        el.textContent = "Erro ao gravar: " + error.message;
+        el.textContent = "Erro ao gravar: " + msgErroBanco(error.message);
         el.hidden = false;
         return;
       }
@@ -1370,6 +1525,19 @@
     btnApagar.style.color = "#a12b2b";
     btnDup.after(btnApagar);
     btnApagar.addEventListener("click", verApagarTudo);
+    const btnVal = document.createElement("button");
+    btnVal.type = "button";
+    btnVal.id = "prod-valores-aliancas";
+    btnVal.className = "btn btn-line";
+    btnVal.textContent = "Valores das alianças";
+    $("prod-novo").after(btnVal);
+    btnVal.addEventListener("click", verValoresAliancas);
+    // Carimbo de versão: se este número não aparecer na tela, o navegador ainda está com o arquivo antigo.
+    const selo = document.createElement("p");
+    selo.className = "field-hint";
+    selo.style.margin = "0.25rem 0 0";
+    selo.textContent = "Painel de produtos — versão " + VERSAO_PAINEL;
+    $("prod-barra").after(selo);
     $("prod-arquivo").addEventListener("change", aoEscolherPlanilha);
     $("prod-importar-site").addEventListener("click", (e) => importarDoSite(e.currentTarget));
     $("prod-lista").addEventListener("click", (e) => {

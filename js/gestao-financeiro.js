@@ -442,6 +442,8 @@
   function precosParaOSite() {
     const mudancas = [];
     produtosSite.forEach((p) => {
+      // Peça com valores por tipo (Par / Unidade / Trio) tem o preço definido por eles; não mexe.
+      if (Array.isArray(p.precos) && p.precos.length) return;
       const tokens = tokensDoCodigo(p.codigo);
       if (!tokens.length) return;
       let venda = null;
@@ -540,7 +542,7 @@
       db.from("financeiro_config").select("*").eq("chave", "criterios"),
       db.from("financeiro_modelos").select("*").order("modelo"),
       db.from("financeiro_vendas").select("*").order("id"),
-      db.from("produtos").select("id,nome,codigo,preco"),
+      db.from("produtos").select("*"),
     ]);
     const falha = [rc, rm, rv].find((r) => r.error);
     if (falha) {
