@@ -941,13 +941,24 @@
     for (let i = 0; i < aoa.length; i++) {
       for (const c of aoa[i]) {
         if (typeof c === "string" && c.trim().startsWith("Cód")) {
-          const m = c.match(/Cód\.?:\s*([A-Za-z0-9.]+)/);
-          posicoes.push({ linha: i, codigo: m ? m[1] : c.trim() });
+          // Peça com numeração feminina e masculina separadas vem como "Cód.: AL032F | AL032M".
+          const m = c.match(/Cód\.?:\s*([A-Za-z0-9.]+)(?:\s*\|\s*([A-Za-z0-9.]+))?/);
+          posicoes.push({ linha: i, codigo: m ? m[1] : c.trim(), codigo2: m && m[2] ? m[2] : "" });
           break;
         }
       }
     }
     return posicoes;
+  }
+
+  // Quando o "Cód." do bloco traz dois códigos (ex.: "AL032F | AL032M"), o F/M no final
+  // diz qual é a numeração feminina e qual é a masculina — não importa a ordem em que vêm.
+  function codigosPorGenero(codigo, codigo2) {
+    if (!codigo2) return null;
+    const par = [codigo, codigo2];
+    const fem = par.find((c) => /F$/i.test(c)) || "";
+    const masc = par.find((c) => /M$/i.test(c)) || "";
+    return (fem || masc) ? { fem, masc } : null;
   }
 
   function extrairCatalogo(X, wb) {
@@ -962,6 +973,7 @@
       produtos.push({
         linha: p.linha,
         codigo: p.codigo,
+        codigo2: p.codigo2,
         nome: catalogoGetNome(bloco),
         acabamento: catalogoGetField(bloco, "Acabamento"),
         conforto: catalogoGetField(bloco, "Conforto"),
@@ -1023,6 +1035,12 @@
       const est = buscaEstoque(estoque, p.codigo) || {};
       const detalhes = [p.detalhes, p.conforto ? `Conforto: ${p.conforto}` : ""].filter(Boolean).join(" · ");
       const existente = casados.get(p.linha);
+      // Peça com numeração feminina e masculina separadas (Cód. duplo no CATALOGO, ex.: AL032F |
+      // AL032M): cada código tem sua própria linha na aba ESTOQUE, com sua própria numeração.
+      // Sem isso, só a numeração do primeiro código entrava, e a do outro gênero se perdia.
+      const genero = codigosPorGenero(p.codigo, p.codigo2);
+      const estFem = genero && genero.fem ? buscaEstoque(estoque, genero.fem) : null;
+      const estMasc = genero && genero.masc ? buscaEstoque(estoque, genero.masc) : null;
       const porChave = {
         id: existente ? existente.id : "",
         nome: p.nome,
@@ -1034,7 +1052,9 @@
         descricao: "", codigo: p.codigo, cor: p.cor, pedra: p.pedra, largura: p.largura,
         formato: p.formato, acabamento: p.acabamento, detalhes,
         preco_par: p.valores.par, preco_unidade: p.valores.unidade, preco_trio: p.valores.trio,
-        tamanhos: est.tamanhos || "", tamanhos_feminino: "", tamanhos_masculino: "",
+        tamanhos: genero ? "" : (est.tamanhos || ""),
+        tamanhos_feminino: estFem ? estFem.tamanhos || "" : "",
+        tamanhos_masculino: estMasc ? estMasc.tamanhos || "" : "",
         ativo: existente ? "" : "Não",
       };
       linhas.push(COLUNAS.map((c) => porChave[c.k]));
