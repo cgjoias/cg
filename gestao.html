@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <script>(function(){try{var t=localStorage.getItem("cg-tema");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão de Pedidos | CG Acessórios</title>
-  <meta name="description" content="Painel interno de pedidos da CG Acessórios.">
+  <title>Gestão | CG Acessórios</title>
+  <meta name="description" content="Painel interno de pedidos e produtos da CG Acessórios.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="canonical" href="https://www.cgacessorios.com.br/gestao.html">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/marca/favicon-32.png">
@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="assets/img/marca/apple-touch-icon.png">
   <link rel="stylesheet" href="css/tokens.css?v=20260920d">
   <link rel="stylesheet" href="css/base.css?v=20260920i">
-  <link rel="stylesheet" href="css/gestao.css?v=20260715b">
+  <link rel="stylesheet" href="css/gestao.css?v=20260920p">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
   <header class="gestao-header">
     <div class="wrap">
       <span class="eyebrow on-dark">Uso interno</span>
-      <h1>Gestão de pedidos</h1>
+      <h1>Gestão</h1>
     </div>
   </header>
 
@@ -71,19 +71,50 @@
   </div>
 
   <div id="painel-gestao" class="wrap gestao-wrap" hidden>
-    <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
-      <button type="button" id="btn-exportar" class="btn btn-primary">Exportar para Excel</button>
-      <button type="button" id="btn-excluir-todos" class="btn btn-danger">Excluir tudo</button>
+    <div class="gestao-topo">
+      <div class="gestao-abas" role="tablist">
+        <button type="button" class="gestao-aba active" data-aba="pedidos" role="tab">Pedidos</button>
+        <button type="button" class="gestao-aba" data-aba="produtos" role="tab">Produtos</button>
+      </div>
       <button type="button" id="btn-sair" class="btn">Sair</button>
     </div>
-    <section class="gestao-secao">
-      <h2>Pedidos pendentes</h2>
-      <div class="pedido-grid" id="lista-pendentes"></div>
-    </section>
-    <section class="gestao-secao">
-      <h2>Pedidos confirmados</h2>
-      <div class="pedido-grid" id="lista-confirmados"></div>
-    </section>
+
+    <div id="aba-pedidos">
+      <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <button type="button" id="btn-exportar" class="btn btn-primary">Exportar para Excel</button>
+        <button type="button" id="btn-excluir-todos" class="btn btn-danger">Excluir tudo</button>
+      </div>
+      <section class="gestao-secao">
+        <h2>Pedidos pendentes</h2>
+        <div class="pedido-grid" id="lista-pendentes"></div>
+      </section>
+      <section class="gestao-secao">
+        <h2>Pedidos confirmados</h2>
+        <div class="pedido-grid" id="lista-confirmados"></div>
+      </section>
+    </div>
+
+    <div id="aba-produtos" hidden>
+      <div class="prod-barra" id="prod-barra">
+        <input type="search" id="prod-busca" class="prod-busca" placeholder="Buscar peça por nome ou código...">
+        <div class="prod-acoes">
+          <button type="button" id="prod-novo" class="btn btn-primary">＋ Novo produto</button>
+          <button type="button" id="prod-baixar" class="btn btn-line">Baixar planilha</button>
+          <button type="button" id="prod-importar" class="btn btn-line">Importar planilha</button>
+          <input type="file" id="prod-arquivo" accept=".xlsx,.xls" hidden>
+        </div>
+      </div>
+      <p id="prod-msg" class="prod-msg" hidden></p>
+      <div id="prod-vazio" class="prod-vazio" hidden>
+        <p>Ainda não há produtos no painel. Para começar, copie os produtos que já estão no site (basta fazer isso uma vez):</p>
+        <button type="button" id="prod-importar-site" class="btn btn-primary">Importar produtos atuais do site</button>
+      </div>
+      <div id="prod-lista" class="prod-grid"></div>
+    </div>
+  </div>
+
+  <div id="prod-modal" class="prod-modal" hidden>
+    <div class="prod-modal-caixa" id="prod-modal-corpo"></div>
   </div>
 
   <footer class="site-footer">
@@ -127,5 +158,6 @@
   <script src="js/social.js?v=20260715b"></script>
   <script src="js/supabaseClient.js?v=20260715b"></script>
   <script src="js/gestao.js?v=20260715b"></script>
+  <script src="js/gestao-produtos.js?v=20260920p"></script>
 </body>
 </html>
