@@ -250,12 +250,20 @@ footer.site-footer .brand-logo { width: 34px; height: 34px; }
     padding: var(--space-3);
     gap: var(--space-2);
     transform: translateY(-130%);
-    transition: transform 0.25s ease;
+    /* Fechado: some de verdade (senão a borda inferior aparece como uma linha no header) */
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.25s ease, visibility 0s linear 0.25s;
     border-bottom: var(--line);
     max-height: calc(100vh - 79px);
     overflow-y: auto;
   }
-  .nav-links.open { transform: translateY(0); }
+  .nav-links.open {
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 0.25s ease, visibility 0s;
+  }
   .nav-toggle {
     display: inline-flex;
     background: none;
@@ -281,7 +289,7 @@ footer.site-footer .brand-logo { width: 34px; height: 34px; }
     opacity: 1;
     visibility: visible;
     min-width: 0;
-    background: rgba(58, 20, 32, 0.05);
+    background: var(--dropdown-bg); /* branco, igual ao desktop */
     border: none;
     box-shadow: none;
     border-radius: 8px;
