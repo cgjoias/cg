@@ -414,3 +414,35 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
   .pedido-tema .emo { font-size: 1.1rem; }
   .pedido-fechar .emo { font-size: 0.9rem; }
 }
+
+/* ---------- Celular: a tela de pedido ROLA (em vez de cortar o conteúdo) ----------
+   Antes tudo era forçado a caber na altura da tela (overflow: hidden). Quando a peça
+   tem opções de aro/tamanho, o formulário fica mais alto que a tela: a foto quadrada
+   passava da sua linha do grid e cobria o começo do formulário, e o resto era cortado.
+   Agora: foto com altura limitada no topo, formulário logo abaixo e rolagem dentro do
+   card. Esta regra fica no FIM do arquivo de propósito, pra vencer as anteriores. */
+@media (max-width: 860px) {
+  .pedido-card {
+    display: block;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--space-3) + 72px); /* respiro pra sacola/WhatsApp fixos não taparem o último botão */
+  }
+  .pedido-media {
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+  .pedido-foto-principal {
+    flex: none;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 34vh;
+  }
+  .pedido-card form {
+    height: auto;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+}
