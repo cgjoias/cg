@@ -85,7 +85,8 @@
 .produto-material { color: var(--gold-dim); font-size: 0.8rem; letter-spacing: 0.03em; margin-bottom: 0.3em; }
 .produto-preco { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.4em; }
 .produto-codigo { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.02em; margin-bottom: var(--space-2); flex-grow: 1; }
-.produto-card .btn { width: 100%; position: relative; z-index: 1; }
+.produto-card .btn { width: 100%; position: relative; z-index: 1; flex-shrink: 0; }
+.produto-card .btn + .btn { margin-top: 0.6rem; } /* espaço entre "Pedir esta peça" e "Adicionar à sacola" */
 .produto-card .btn-line,
 .produto-card .btn-line:hover { border: 2px solid var(--divider-color); }
 
@@ -363,7 +364,7 @@
   .detalhe-descricao { -webkit-line-clamp: 2; font-size: 0.82rem; margin-bottom: 0.6rem; }
   .detalhe-info-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
   .detalhe-info .btn { padding: 0.7em 0.6em; font-size: 0.85rem; }
-  .btn-sacola { margin-top: 0; }
+  .detalhe-info .btn-sacola { margin-top: 0; } /* só no painel de detalhes (ele usa grid com gap) */
 }
 @media (min-width: 761px) and (max-height: 700px) {
   .detalhe-descricao { -webkit-line-clamp: 2; }
