@@ -315,18 +315,21 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
    várias colunas mesmo no celular. */
 .chips-variacao-linha {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 0.35rem;
   width: 100%;
 }
 @media (max-width: 480px) {
-  .chips-variacao-linha { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 0.4rem; }
+  .chips-variacao-linha { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 0.3rem; }
 }
 
+/* Pastilha em vez de círculo — a numeração do catálogo vem como "10/11", "12/13"
+   etc., e um círculo perfeito não cabe esse texto sem cortar. */
 .chip {
   position: relative;
   cursor: pointer;
-  aspect-ratio: 1 / 1;
+  max-width: 64px;
+  justify-self: center;
 }
 .chip input {
   position: absolute;
@@ -339,17 +342,18 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   width: 100%;
-  padding: 0.2em;
+  min-height: 34px;
+  padding: 0.3em 0.35em;
   border: 1px solid var(--bone-2);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  line-height: 1;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  line-height: 1.1;
   color: var(--ink);
   background: var(--surface);
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   text-align: center;
+  white-space: nowrap;
 }
 .chip input:checked + span {
   background: var(--velvet);
