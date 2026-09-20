@@ -83,6 +83,7 @@ function renderizarVariacoes(produto) {
   if (!container || !campoTexto) return;
 
   container.innerHTML = "";
+  container.classList.remove("chips-variacao--duplo");
 
   const reais = produto ? opcoesReaisDoProduto(produto) : null;
   const configCategoria = produto && typeof VARIACOES_POR_CATEGORIA !== "undefined"
@@ -111,6 +112,10 @@ function renderizarVariacoes(produto) {
     campoTexto.value = "";
     container.hidden = false;
     ajuda.hidden = false;
+    // Com feminino + masculino juntos, empilhar os dois grupos toma altura demais e empurra
+    // o resto do formulário pra fora da tela no desktop. Com essa classe o CSS bota os dois
+    // grupos lado a lado (só quando cabe — no celular continua empilhado).
+    container.classList.toggle("chips-variacao--duplo", reais.grupos.length > 1);
     reais.grupos.forEach((grupo) => montarChipsGrupo(container, campoTexto, grupo.rotulo, grupo.opcoes));
     return;
   }
