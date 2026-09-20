@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="assets/img/marca/apple-touch-icon.png">
   <link rel="stylesheet" href="css/tokens.css?v=20260920d">
   <link rel="stylesheet" href="css/base.css?v=20260920i">
-  <link rel="stylesheet" href="css/gestao.css?v=20260920p">
+  <link rel="stylesheet" href="css/gestao.css?v=20260920q">
 </head>
 <body>
 
@@ -81,18 +81,51 @@
     </div>
 
     <div id="aba-pedidos">
-      <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
-        <button type="button" id="btn-exportar" class="btn btn-primary">Exportar para Excel</button>
-        <button type="button" id="btn-excluir-todos" class="btn btn-danger">Excluir tudo</button>
+      <p id="ped-msg" class="prod-msg" hidden></p>
+
+      <header class="ped-hero">
+        <div class="ped-hero-txt">
+          <span class="ped-eyebrow">Gestão · CG Acessórios</span>
+          <h2 class="ped-titulo">Pedidos</h2>
+          <p id="ped-atualizado" class="ped-hero-sub">Carregando pedidos…</p>
+        </div>
+        <div class="ped-hero-acoes">
+          <button type="button" id="btn-atualizar" class="btn">Atualizar</button>
+          <button type="button" id="btn-exportar" class="btn">Exportar para Excel</button>
+        </div>
+      </header>
+
+      <div class="ped-kpis" id="ped-kpis"></div>
+
+      <div class="ped-barra">
+        <input type="search" id="ped-busca" class="prod-busca" placeholder="Buscar por cliente, WhatsApp ou peça...">
+        <div class="ped-filtros" id="ped-filtros" role="group" aria-label="Filtrar pedidos">
+          <button type="button" class="ativo" data-filtro="todos">Todos</button>
+          <button type="button" data-filtro="pendentes">Pendentes</button>
+          <button type="button" data-filtro="confirmados">Confirmados</button>
+        </div>
       </div>
-      <section class="gestao-secao">
-        <h2>Pedidos pendentes</h2>
-        <div class="pedido-grid" id="lista-pendentes"></div>
+
+      <section class="ped-secao" id="sec-pendentes">
+        <div class="ped-secao-cab">
+          <h2>Pedidos pendentes</h2>
+          <span class="ped-contagem" id="cont-pendentes">0</span>
+          <p>Clientes esperando contato. Toque em <strong>WhatsApp</strong> para chamar já com a mensagem pronta.</p>
+        </div>
+        <div class="ped-grid" id="lista-pendentes"></div>
       </section>
-      <section class="gestao-secao">
-        <h2>Pedidos confirmados</h2>
-        <div class="pedido-grid" id="lista-confirmados"></div>
+
+      <section class="ped-secao" id="sec-confirmados">
+        <div class="ped-secao-cab">
+          <h2>Pedidos confirmados</h2>
+          <span class="ped-contagem" id="cont-confirmados">0</span>
+        </div>
+        <div class="ped-grid" id="lista-confirmados"></div>
       </section>
+
+      <div class="ped-risco">
+        <button type="button" id="btn-excluir-todos" class="btn btn-danger">Excluir todos os pedidos</button>
+      </div>
     </div>
 
     <div id="aba-produtos" hidden>
@@ -160,7 +193,7 @@
   <script src="js/nav-dropdown.js?v=20260715b"></script>
   <script src="js/social.js?v=20260715b"></script>
   <script src="js/supabaseClient.js?v=20260715b"></script>
-  <script src="js/gestao.js?v=20260715b"></script>
+  <script src="js/gestao.js?v=20260920q"></script>
   <script src="js/gestao-financeiro.js?v=20260920x"></script>
   <script src="js/gestao-produtos.js?v=20260920w"></script>
 </body>
