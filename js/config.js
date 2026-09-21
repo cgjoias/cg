@@ -5,12 +5,12 @@
 // ============================================================
 const LOJA = {
   nome: "CG Acessórios",
-  whatsapp: "5551999999999", // formato: DDI + DDD + número, só dígitos — troque pelo número real
+  whatsapp: "5591991592137", // formato: DDI + DDD + número, só dígitos
   whatsappMensagem: "Olá! Vim do site da CG Acessórios e gostaria de saber mais.",
   instagram: "https://www.instagram.com/lojacg.oficial",
   instagramHandle: "@lojacg.oficial",
   facebook: "https://www.facebook.com/lojacg.oficial", // confirme se este é o endereço real
-  email: "contato@cgacessorios.com.br", // troque pelo e-mail real
+  email: "lojacg.contato@gmail.com",
 };
 
 // Opções de tamanho/cor mostradas como "caixinhas" clicáveis no formulário
@@ -80,9 +80,9 @@ const FRETE_POR_UF = {
   RJ: 52.50,
   MG: 54.00,
   ES: 54.00,
-  PR: 59.80,
-  SC: 59.80,
-  RS: 59.80,
+  PR: 84.80, // Sul: 59,80 + R$ 25 (região mais distante de Belém)
+  SC: 84.80,
+  RS: 84.80,
   AM: 64.00,
   RR: 64.00,
   RO: 64.00,
