@@ -7,6 +7,10 @@ const CATEGORIAS = {
   pulseiras: "Pulseiras",
 };
 
+// Texto alternativo das fotos: nome + material (ex.: "Aliança ... — Banhado a ouro 18k")
+const escAttr = (t) => String(t).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+const textoAlt = (p) => p.nome + (p.material ? " — " + p.material : "");
+
 const formatoPreco = (valor) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -17,7 +21,7 @@ function cardProduto(produto) {
   card.innerHTML = `
     <div class="medallion produto-medalhao" data-produto-id="${produto.id}" tabindex="0" role="button" aria-label="Ver detalhes de ${produto.nome}">
       <div class="medallion-inner">
-        <img src="${produto.imagem}" alt="${produto.nome}">
+        <img src="${produto.imagem}" alt="${escAttr(textoAlt(produto))}" loading="lazy" decoding="async">
       </div>
     </div>
     <h3>${produto.nome}</h3>
@@ -215,7 +219,7 @@ function iniciarLightbox(produtos, grid) {
     produtoAtual = produto;
     fotosAtuais = fotosDoProduto(produto);
     indiceAtual = 0;
-    img.alt = produto.nome;
+    img.alt = textoAlt(produto);
     montarInfo(produto);
     elementoQueAbriu = elementoOrigem;
     lightbox.hidden = false;
