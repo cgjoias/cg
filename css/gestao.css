@@ -383,3 +383,88 @@ body.pagina-gestao .whatsapp-float { display: none; }
   .ped-valor { font-size: 1.15rem; }
   #aba-produtos .prod-info h3 { font-size: 0.92rem; }
 }
+
+
+/* ============================================================
+   BORDAS DA GESTÃO: PRETAS no modo claro, BRANCAS no modo escuro
+   Uma variável só (--gestao-borda) troca com o tema. As regras usam o
+   prefixo "body.pagina-gestao" de propósito, para vencer os estilos que
+   o gestao-produtos.js e o gestao-financeiro.js injetam na página.
+   ============================================================ */
+body.pagina-gestao { --gestao-borda: #000000; }
+html[data-theme="dark"] body.pagina-gestao { --gestao-borda: #ffffff; }
+
+/* variáveis de borda das abas Pedidos / Produtos / Financeiro */
+body.pagina-gestao #aba-pedidos,
+body.pagina-gestao #aba-produtos,
+body.pagina-gestao #aba-financeiro {
+  --ped-borda: var(--gestao-borda);
+  --fin-borda: var(--gestao-borda);
+}
+
+/* Login e janela de edição */
+body.pagina-gestao .portao-card,
+body.pagina-gestao .prod-modal-caixa {
+  border: 2px solid var(--gestao-borda);
+}
+
+/* Campos de texto, senha, busca, selects, textareas */
+body.pagina-gestao input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+body.pagina-gestao select,
+body.pagina-gestao textarea {
+  border: 2px solid var(--gestao-borda);
+}
+body.pagina-gestao input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):focus,
+body.pagina-gestao select:focus,
+body.pagina-gestao textarea:focus {
+  border-color: var(--gestao-borda);
+  box-shadow: 0 0 0 3px rgba(224, 122, 154, 0.45);
+}
+
+/* Botões (menos os de perigo, que continuam vermelhos de propósito) */
+body.pagina-gestao .btn:not(.btn-danger) {
+  border-color: var(--gestao-borda);
+}
+/* Sobre o topo rosa (igual nos dois modos) a borda é sempre preta */
+body.pagina-gestao .ped-hero .btn,
+body.pagina-gestao .fin-hero .btn,
+body.pagina-gestao .ped-hero .btn:hover,
+body.pagina-gestao .fin-hero .btn:hover {
+  border-color: #000000;
+}
+/* Botões brancos de WhatsApp / e-mail dos cartões de pedido */
+body.pagina-gestao .ped-contato { border-color: #000000; }
+body.pagina-gestao .ped-contato.sem { border-color: var(--gestao-borda); }
+
+/* Abas, filtros e Sair */
+body.pagina-gestao .gestao-abas { border: 2px solid var(--gestao-borda); }
+body.pagina-gestao .gestao-aba { border: 2px solid var(--gestao-borda); }
+body.pagina-gestao .gestao-aba.active { border-color: var(--gestao-borda); }
+body.pagina-gestao #btn-sair { border: 2px solid var(--gestao-borda); }
+body.pagina-gestao .ped-filtros button,
+body.pagina-gestao .fin-nav button { border: 2px solid var(--gestao-borda); }
+body.pagina-gestao .ped-filtros button.ativo { border-color: var(--gestao-borda); }
+
+/* Cartões e painéis */
+body.pagina-gestao .ped-kpi,
+body.pagina-gestao .ped-card,
+body.pagina-gestao .prod-ferramentas,
+body.pagina-gestao .prod-vazio,
+body.pagina-gestao #aba-produtos .prod-card,
+body.pagina-gestao #aba-produtos .prod-vazio,
+body.pagina-gestao .fin-kpi,
+body.pagina-gestao .fin-painel,
+body.pagina-gestao .fin-drop,
+body.pagina-gestao .fin-corpo,
+body.pagina-gestao .fin-grupo {
+  border-width: 2px;
+  border-color: var(--gestao-borda);
+}
+body.pagina-gestao #aba-produtos .prod-card:hover,
+body.pagina-gestao #aba-produtos .prod-card:focus-visible { border-color: var(--gestao-borda); }
+
+/* Botão "Confirmar" dentro do cartão do produto e mini-botões da foto */
+body.pagina-gestao #aba-produtos .prod-conf,
+body.pagina-gestao .prod-foto-acoes button,
+body.pagina-gestao .prod-foto img { border-color: var(--gestao-borda); }
+body.pagina-gestao .prod-foto img { border-width: 2px; }
