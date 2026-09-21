@@ -113,6 +113,20 @@
 .sacola-painel.aberto { transform: translateX(0); visibility: visible; }
 body.sacola-aberta { overflow: hidden; }
 
+/* Enquanto a sacola está aberta, nenhum botão externo pode ficar visível
+   por baixo do fundo escurecido (nav, WhatsApp flutuante, voltar ao topo,
+   botões de fechar/tema da página de pedido, menu mobile). */
+body.sacola-aberta .nav,
+body.sacola-aberta .whatsapp-float,
+body.sacola-aberta .fab-topo,
+body.sacola-aberta .pedido-acoes,
+body.sacola-aberta .nav-toggle {
+  visibility: hidden !important;
+}
+/* O próprio botão da sacola (fab-sacola) também some — quem fecha é o ✕
+   do painel, o clique fora (overlay) ou a tecla Esc. */
+body.sacola-aberta .fab-sacola { visibility: hidden !important; }
+
 .sacola-topo {
   display: flex;
   align-items: center;
