@@ -52,6 +52,44 @@ const VARIACOES_POR_CATEGORIA = {
 // Essas chaves são públicas por natureza (ficam no navegador).
 // Proteja-as em EmailJS > Security > "Allowed domains" (só o seu site).
 // ============================================================
+// ============================================================
+// FRETE ESTIMADO POR ESTADO (sem depender de Correios/Melhor Envio)
+// Baseado num pacote padrão de semijoia, saindo de Belém/PA.
+// São valores ESTIMADOS — ajuste livremente os números abaixo
+// depois de comparar com o custo real das primeiras postagens.
+// ============================================================
+const FRETE_BELEM_CAPITAL = 22.50; // Belém e região metropolitana
+const FRETE_POR_UF = {
+  PA: 32.80, // interior do Pará
+  AP: 38.50,
+  MA: 39.20,
+  TO: 39.20,
+  PI: 45.90,
+  CE: 45.90,
+  RN: 45.90,
+  PB: 45.90,
+  PE: 45.90,
+  AL: 45.90,
+  SE: 45.90,
+  BA: 45.90,
+  DF: 48.00,
+  GO: 48.00,
+  MT: 48.00,
+  MS: 48.00,
+  SP: 52.50,
+  RJ: 52.50,
+  MG: 54.00,
+  ES: 54.00,
+  PR: 59.80,
+  SC: 59.80,
+  RS: 59.80,
+  AM: 64.00,
+  RR: 64.00,
+  RO: 64.00,
+  AC: 64.00,
+};
+const FRETE_PADRAO = 60.00; // se por algum motivo o estado não for reconhecido
+
 const EMAILJS_CONFIG = {
   publicKey: "iRbeGv5Qmk60RrQDj",
   serviceId: "service_dxaj3zc",

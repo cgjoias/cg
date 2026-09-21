@@ -11,46 +11,33 @@ async function buscarEnderecoPorCep(cepLimpo) {
   try {
     const resp = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
     const dados = await resp.json();
-    if (dados.erro) return;
+    if (dados.erro) return null;
     if (campoEndereco && !campoEndereco.value.trim()) {
       campoEndereco.value = [dados.logradouro, dados.bairro, dados.localidade && `${dados.localidade}/${dados.uf}`].filter(Boolean).join(", ");
     }
+    return dados; // { uf, localidade, ... }
   } catch (e) {
     console.warn("Não foi possível buscar o endereço pelo CEP:", e);
+    return null;
   }
 }
 
-function renderizarOpcoesFrete(opcoes) {
+function valorFretePorEndereco(uf, cidade) {
+  if (uf === "PA" && /bel[eé]m/i.test(cidade || "")) return FRETE_BELEM_CAPITAL;
+  return FRETE_POR_UF[uf] ?? FRETE_PADRAO;
+}
+
+function renderizarOpcaoFrete(valor) {
   const wrap = document.getElementById("frete-opcoes-wrap");
   const lista = document.getElementById("frete-opcoes");
   const status = document.getElementById("frete-status");
   if (!wrap || !lista) return;
 
-  lista.innerHTML = "";
-  freteEscolhido = null;
-  document.dispatchEvent(new CustomEvent("frete:mudou"));
-
-  if (!opcoes || !opcoes.length) {
-    wrap.hidden = false;
-    status.hidden = false;
-    status.textContent = "Nenhuma opção de frete encontrada para esse CEP.";
-    return;
-  }
-
+  freteEscolhido = { servico: "Frete (PAC estimado)", valor, prazo: null };
+  lista.innerHTML = `<p class="chip-frete" style="font-weight:600;">PAC estimado — R$ ${valor.toFixed(2).replace(".", ",")}</p>`;
   status.hidden = true;
-  opcoes.forEach((op, i) => {
-    const id = `frete-op-${i}`;
-    const label = document.createElement("label");
-    label.className = "chip-frete";
-    label.style.display = "block";
-    label.innerHTML = `<input type="radio" name="frete-opcao" id="${id}" value="${i}"> ${op.servico} — R$ ${op.valor.toFixed(2).replace(".", ",")} — ${op.prazo} dia(s) útil(eis)`;
-    lista.appendChild(label);
-    label.querySelector("input").addEventListener("change", () => {
-      freteEscolhido = op;
-      document.dispatchEvent(new CustomEvent("frete:mudou"));
-    });
-  });
   wrap.hidden = false;
+  document.dispatchEvent(new CustomEvent("frete:mudou"));
 }
 
 async function calcularFrete() {
@@ -65,27 +52,25 @@ async function calcularFrete() {
     wrap.hidden = false;
     status.hidden = false;
     status.textContent = "Digite um CEP válido (8 dígitos).";
+    document.getElementById("frete-opcoes").innerHTML = "";
     return;
   }
-
-  await buscarEnderecoPorCep(cepLimpo);
 
   botao.disabled = true;
   const textoOriginal = botao.textContent;
   botao.textContent = "Calculando...";
-  wrap.hidden = false;
-  status.hidden = false;
-  status.textContent = "Calculando o frete...";
-  document.getElementById("frete-opcoes").innerHTML = "";
 
   try {
-    const { data, error } = await db.functions.invoke("calcular-frete", { body: { cepDestino: cepLimpo } });
-    if (error || data?.erro) throw new Error(data?.erro || error?.message || "Erro ao calcular frete");
-    renderizarOpcoesFrete(data.opcoes);
+    const endereco = await buscarEnderecoPorCep(cepLimpo);
+    if (!endereco) throw new Error("CEP não encontrado");
+    const valor = valorFretePorEndereco(endereco.uf, endereco.localidade);
+    renderizarOpcaoFrete(valor);
   } catch (e) {
     console.error(e);
+    wrap.hidden = false;
     status.hidden = false;
-    status.textContent = "Não foi possível calcular o frete agora. Você pode combinar pelo WhatsApp depois de enviar o pedido.";
+    status.textContent = "Não foi possível calcular o frete pra esse CEP. Confirme e tente de novo.";
+    document.getElementById("frete-opcoes").innerHTML = "";
   } finally {
     botao.disabled = false;
     botao.textContent = textoOriginal;
