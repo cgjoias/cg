@@ -8,6 +8,11 @@
 }
 [data-theme="dark"] .institucional-header { border-bottom-color: #fff; } /* modo escuro: linha branca */
 
+/* Modo claro: fundo BRANCO (e não o rosa do tema) nas páginas institucionais. */
+:root {
+  --page-bg: #FFFFFF;
+}
+
 /* Modo escuro: fundo PRETO (e não o vinho do tema) nas páginas institucionais.
    Superfícies e bordas internas (ex.: perguntas do FAQ) acompanham. */
 [data-theme="dark"] {
@@ -29,46 +34,54 @@
   .institucional-wrap { padding: var(--space-3) var(--space-2) var(--space-4); }
 }
 
-/* Botão "Voltar": pílula com borda (preta no claro / branca no escuro),
-   seta dentro de um círculo e animação de deslizar no hover. */
+/* Botão "Voltar": pílula com contorno refinado em tom de vinho, ícone em
+   círculo com gradiente rosa/vinho e leve elevação — para um ar premium. */
 .institucional-voltar {
   display: inline-flex;
   align-items: center;
-  gap: 0.7em;
-  padding: 0.4em 1.3em 0.4em 0.4em;
-  border: 2px solid var(--divider-color);
+  gap: 0.75em;
+  padding: 0.4em 1.5em 0.4em 0.4em;
+  border: 1.5px solid var(--gold-dim);
   border-radius: 999px;
-  background: transparent;
-  color: var(--divider-color);
-  font-size: 0.92rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  background: var(--bone-2);
+  color: var(--gold-dim);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   text-decoration: none;
   margin-bottom: var(--space-4);
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 2px 10px rgba(58, 20, 32, 0.08);
+  transition: background 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, transform 0.28s ease;
 }
 .institucional-voltar .seta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2em;
-  height: 2em;
+  width: 2.15em;
+  height: 2.15em;
   border-radius: 50%;
-  background: var(--divider-color);
-  color: var(--page-bg);
+  background: linear-gradient(135deg, var(--rose), var(--gold-dim));
+  color: #fff;
   font-size: 1.05em;
   line-height: 1;
-  transition: transform 0.2s ease;
+  box-shadow: 0 3px 10px rgba(122, 33, 66, 0.35);
+  transition: background 0.28s ease, color 0.28s ease, transform 0.28s ease;
 }
 .institucional-voltar:hover {
-  background: var(--btn-primary-bg);
-  color: #000;
-  box-shadow: 0 6px 16px rgba(224, 122, 154, 0.35);
-  transform: translateY(-1px);
+  background: var(--gold-dim);
+  color: #fff;
+  border-color: var(--gold-dim);
+  box-shadow: 0 10px 26px rgba(122, 33, 66, 0.32);
+  transform: translateY(-2px);
 }
-.institucional-voltar:hover .seta { transform: translateX(-4px); }
-.institucional-voltar:active { transform: translateY(0); }
-.institucional-voltar:focus-visible { outline: 3px solid var(--btn-primary-bg); outline-offset: 3px; }
+.institucional-voltar:hover .seta {
+  background: #fff;
+  color: var(--gold-dim);
+  transform: translateX(-4px);
+}
+.institucional-voltar:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(122, 33, 66, 0.22); }
+.institucional-voltar:focus-visible { outline: 3px solid var(--gold-dim); outline-offset: 3px; }
 
 .institucional-corpo { font-size: 1.06rem; }
 .institucional-corpo h2 {
