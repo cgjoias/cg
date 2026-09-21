@@ -55,19 +55,20 @@
   100% { transform: scale(1); }
 }
 
-/* Voltar ao topo — círculo rosa claro, seta vinho; só aparece depois de rolar */
+/* Voltar ao topo — círculo rosa claro, seta vinho; só aparece depois de rolar.
+   Menor que os outros botões flutuantes (sacola/WhatsApp), pois é secundário. */
 .fab-topo {
-  right: 22px;
-  bottom: 162px;
-  width: 58px;
-  height: 58px;
+  right: 26px;
+  bottom: 176px;
+  width: 42px;
+  height: 42px;
   background: #fbdfe8;
   color: #7a2142;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
   opacity: 0;
   visibility: hidden;
 }
-.fab-topo svg { width: 26px; height: 26px; }
+.fab-topo svg { width: 18px; height: 18px; }
 .fab-topo.visivel { opacity: 1; visibility: visible; }
 .fab-topo:hover { transform: translateY(-2px); }
 
@@ -77,8 +78,8 @@
 @media (max-width: 720px) {
   .fab-sacola { right: 16px; bottom: 78px; width: 52px; height: 52px; }
   .fab-sacola svg { width: 25px; height: 25px; }
-  .fab-topo { right: 16px; bottom: 140px; width: 52px; height: 52px; }
-  .fab-topo svg { width: 23px; height: 23px; }
+  .fab-topo { right: 18px; bottom: 148px; width: 34px; height: 34px; }
+  .fab-topo svg { width: 15px; height: 15px; }
 }
 
 /* ---------- Painel lateral ---------- */
