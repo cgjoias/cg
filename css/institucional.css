@@ -161,3 +161,37 @@
 .contato-card strong { display: block; margin-bottom: 0.2em; }
 .contato-card a { color: var(--gold-dim); font-size: 0.9rem; }
 .contato-card a:hover { color: var(--gold); }
+
+
+/* ---------- Chips de cidades e bairros (página Onde entregamos) ---------- */
+.institucional-corpo .chips-cidades {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.1em;
+  padding: 0;
+}
+.institucional-corpo .chips-cidades li {
+  margin: 0;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  background: var(--bone-2);
+  border: 1px solid var(--velvet-3);
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.institucional-corpo .chips-links li { padding: 0; background: transparent; border: 0; }
+.institucional-corpo .chips-links a {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border: 2px solid var(--gold-dim);
+  border-radius: 999px;
+  color: var(--gold-dim);
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.institucional-corpo .chips-links a:hover,
+.institucional-corpo .chips-links a:focus-visible { background: var(--gold-dim); color: var(--page-bg); }
+.institucional-corpo h2[id] { scroll-margin-top: 5rem; }
