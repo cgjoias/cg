@@ -244,7 +244,7 @@ footer.site-footer .brand-logo { width: 34px; height: 34px; }
   .nav-links {
     position: fixed;
     inset: 79px 0 auto 0;
-    background: var(--header-bg);
+    background: #ffffff; /* menu aberto no celular: fundo branco (o header continua rosa) */
     flex-direction: column;
     align-items: stretch;
     padding: var(--space-3);
