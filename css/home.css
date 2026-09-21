@@ -151,10 +151,10 @@
 }
 .cta-pdf .btn {
   padding: 0.85em 1.8em;
-  border: 2px solid var(--divider-color); /* preta no claro, branca no escuro */
+  border: 2px solid #000; /* preta nos dois modos: o fundo desta seção é rosa também no escuro */
   background: transparent;
   color: var(--bone);
 }
-.cta-pdf .btn:hover:not(:disabled) { background: var(--divider-color); color: var(--section-bg); }
+.cta-pdf .btn:hover:not(:disabled) { background: #000; color: #fff; }
 .cta-pdf .btn:disabled { opacity: 0.7; cursor: progress; }
 .cta-pdf .catalogo-pdf-status { font-size: 0.85rem; color: var(--bone); min-height: 1.2em; }
