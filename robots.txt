@@ -4,4 +4,4 @@ Disallow: /gestao.html
 Disallow: /resumo.html
 Disallow: /css/*.html$
 
-Sitemap: https://www.cgacessorios.com.br/sitemap.xml
+Sitemap: https://cgjoias.github.io/cg/sitemap.xml
