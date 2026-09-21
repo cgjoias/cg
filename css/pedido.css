@@ -559,3 +559,106 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: var(--pedido
 /* O valor já aparece nos botões Par / Unidade / Trio e no select "Peça desejada":
    não repete embaixo do nome da peça. */
 .pedido-media-preco { display: none !important; }
+
+
+/* ---------- Frete: escolha "Calcular pelo CEP" / "Combinar com a loja" ----------
+   Dois cartões selecionáveis (no lugar dos radios crus, que herdavam o estilo
+   de campo de texto e ficavam enormes/com contorno rosa ao clicar). */
+.pedido-card .frete-modo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.pedido-card .frete-modo .frete-modo-opcao {
+  position: relative;
+  display: block;
+  margin: 0;
+  font-size: inherit;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+/* o radio de verdade fica invisível, mas continua acessível (teclado / leitor de tela) */
+.pedido-card .frete-modo .frete-modo-opcao input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+.pedido-card .frete-modo .frete-modo-cartao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+  height: 100%;
+  padding: 0.6em 0.8em 0.6em 2.3em;
+  border: 2px solid var(--bone-2);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink);
+  line-height: 1.2;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+/* bolinha do radio */
+.pedido-card .frete-modo .frete-modo-cartao::before {
+  content: "";
+  position: absolute;
+  left: 0.8em;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  background: transparent;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.pedido-card .frete-modo .frete-modo-cartao b {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.pedido-card .frete-modo .frete-modo-cartao small {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.pedido-card .frete-modo .frete-modo-opcao:hover .frete-modo-cartao { border-color: var(--gold-dim); }
+
+/* selecionado: borda vinho, fundo rosado suave e bolinha preenchida */
+.pedido-card .frete-modo .frete-modo-opcao input:checked + .frete-modo-cartao {
+  border-color: var(--gold-dim);
+  background: rgba(122, 33, 66, 0.08);
+}
+.pedido-card .frete-modo .frete-modo-opcao input:checked + .frete-modo-cartao::before {
+  border-color: var(--gold-dim);
+  background: var(--gold-dim);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+[data-theme="dark"] .pedido-card .frete-modo .frete-modo-opcao input:checked + .frete-modo-cartao {
+  background: rgba(234, 173, 195, 0.12);
+}
+.pedido-card .frete-modo .frete-modo-opcao input:focus-visible + .frete-modo-cartao {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
+}
+@media (max-width: 380px) {
+  .pedido-card .frete-modo .frete-modo-cartao { padding-left: 2.1em; }
+  .pedido-card .frete-modo .frete-modo-cartao small { display: none; }
+}
+
+/* Resultado do frete calculado */
+.pedido-card #frete-opcoes .chip-frete {
+  margin: 0;
+  padding: 0.65em 0.9em;
+  border: 2px solid var(--gold-dim);
+  border-radius: 14px;
+  background: rgba(122, 33, 66, 0.08);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+[data-theme="dark"] .pedido-card #frete-opcoes .chip-frete { background: rgba(234, 173, 195, 0.12); }
