@@ -117,9 +117,25 @@
           <input type="email" id="email" name="email" placeholder="seu@email.com" inputmode="email" autocomplete="email">
         </div>
 
+        <div class="field-row">
+          <div class="field">
+            <label for="cep">CEP</label>
+            <input type="text" id="cep" name="cep" placeholder="00000-000" inputmode="numeric" maxlength="9">
+          </div>
+          <div class="field" style="align-self: end;">
+            <button type="button" class="btn btn-line" id="btn-calcular-frete">Calcular frete</button>
+          </div>
+        </div>
+
         <div class="field">
-          <label for="endereco">Endereço para entrega (opcional)</label>
-          <input type="text" id="endereco" name="endereco" placeholder="Deixe em branco para combinar pelo WhatsApp">
+          <label for="endereco">Endereço para entrega</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Preenchido automaticamente pelo CEP, ou deixe em branco para combinar pelo WhatsApp">
+        </div>
+
+        <div class="field" id="frete-opcoes-wrap" hidden>
+          <label>Frete</label>
+          <div id="frete-opcoes"></div>
+          <p class="field-hint" id="frete-status" hidden></p>
         </div>
 
         <div class="field">
