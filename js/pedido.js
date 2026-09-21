@@ -77,12 +77,33 @@ async function calcularFrete() {
   }
 }
 
+function ligarModoFrete() {
+  const radioCalcular = document.getElementById("modo-frete-calcular");
+  const radioCombinar = document.getElementById("modo-frete-combinar");
+  const bloco = document.getElementById("bloco-cep-frete");
+  if (!radioCalcular || !radioCombinar || !bloco) return;
+
+  const atualizar = () => {
+    if (radioCombinar.checked) {
+      bloco.hidden = true;
+      freteEscolhido = null;
+      document.dispatchEvent(new CustomEvent("frete:mudou"));
+    } else {
+      bloco.hidden = false;
+    }
+  };
+  radioCalcular.addEventListener("change", atualizar);
+  radioCombinar.addEventListener("change", atualizar);
+  atualizar();
+}
+
 function ligarCampoFrete() {
   const campoCep = document.getElementById("cep");
   const botao = document.getElementById("btn-calcular-frete");
   if (!campoCep || !botao) return;
   campoCep.addEventListener("input", () => { campoCep.value = formatarCep(campoCep.value); });
   botao.addEventListener("click", calcularFrete);
+  ligarModoFrete();
 }
 
 function dadosFreteParaPedido() {
