@@ -1,0 +1,211 @@
+/* ==================== Cuidados com a peça — guia completo ==================== */
+
+.cuidados .cd-eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: var(--step-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 0.4em;
+}
+.cuidados .cd-titulo-secao {
+  font-size: var(--step-h2);
+  margin-top: var(--space-5) !important;
+}
+.cuidados .cd-titulo-secao:first-of-type { margin-top: 0 !important; }
+.cuidados .cd-subtitulo {
+  color: var(--muted);
+  max-width: 680px;
+  margin-bottom: var(--space-3) !important;
+}
+
+/* ---------- Bloco topo: foto + regras numeradas ---------- */
+.cd-regras {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--space-4);
+  align-items: center;
+  margin: var(--space-3) 0 var(--space-5);
+}
+@media (max-width: 860px) {
+  .cd-regras { grid-template-columns: 1fr; gap: var(--space-3); }
+}
+.cd-regras-foto {
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(58, 20, 32, 0.18);
+  aspect-ratio: 4 / 5;
+}
+.cd-regras-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.cd-regras-lista { display: flex; flex-direction: column; }
+.cd-regra {
+  display: flex;
+  gap: 1.1em;
+  padding: 1.1em 0;
+  border-top: 1px solid var(--bone-2);
+}
+.cd-regra:first-child { border-top: none; padding-top: 0; }
+.cd-regra-num {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gold-dim);
+  opacity: 0.55;
+  flex-shrink: 0;
+  width: 1.6em;
+  line-height: 1.3;
+}
+.cd-regra h3 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  color: var(--ink);
+  margin: 0 0 0.2em;
+}
+.cd-regra p { margin: 0 !important; color: var(--muted); font-size: 0.96rem; line-height: 1.55; }
+
+/* ---------- Cards de metais e materiais ---------- */
+.cd-metais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.cd-metal-card {
+  background: var(--surface);
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  box-shadow: 0 8px 22px rgba(58, 20, 32, 0.07);
+}
+.cd-metal-card .cd-icone { font-size: 1.7rem; display: block; margin-bottom: 0.4em; }
+.cd-metal-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--ink);
+  margin: 0 0 0.5em;
+}
+.cd-metal-card p { color: var(--muted); font-size: 0.94rem; margin-bottom: 0.8em !important; }
+.cd-metal-card .cd-linha { display: flex; gap: 0.5em; align-items: flex-start; margin-bottom: 0.45em; font-size: 0.92rem; line-height: 1.5; }
+.cd-metal-card .cd-linha:last-child { margin-bottom: 0; }
+.cd-metal-card .cd-linha .marca { flex-shrink: 0; font-weight: 700; width: 1.4em; }
+.cd-metal-card .cd-linha.faca .marca { color: #3f8f5f; }
+.cd-metal-card .cd-linha.evite .marca { color: var(--rose); }
+.cd-metal-card .cd-linha span:last-child { color: var(--ink); }
+
+/* ---------- Tabela de quilates ---------- */
+.cd-quilates-wrap { margin-bottom: var(--space-4); }
+.cd-quilates-nota {
+  background: var(--bone-2);
+  border-left: 3px solid var(--gold-dim);
+  border-radius: var(--radius-s);
+  padding: 0.8em 1em;
+  font-size: 0.92rem;
+  color: var(--ink);
+  margin-bottom: var(--space-3) !important;
+}
+.cd-quilates-scroll { overflow-x: auto; border: 1px solid var(--bone-2); border-radius: var(--radius-m); }
+.cd-quilates-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 480px; }
+.cd-quilates-tabela thead th {
+  background: var(--bone-2);
+  color: var(--gold-dim);
+  text-align: left;
+  font-weight: 700;
+  padding: 0.7em 1em;
+  white-space: nowrap;
+}
+.cd-quilates-tabela tbody td { padding: 0.6em 1em; color: var(--ink); border-top: 1px solid var(--bone-2); }
+.cd-quilates-tabela tbody td:first-child { font-weight: 700; color: var(--gold-dim); white-space: nowrap; }
+
+/* ---------- Tutorial passo a passo ---------- */
+.cd-materiais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  margin-bottom: var(--space-3) !important;
+}
+.cd-materiais li {
+  list-style: none;
+  background: var(--bone-2);
+  color: var(--gold-dim);
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.4em 1em;
+  border-radius: 999px;
+}
+.cd-materiais { margin-left: 0 !important; padding-left: 0 !important; }
+
+.cd-passos {
+  list-style: none;
+  margin: 0 0 var(--space-3) !important;
+  padding: 0;
+  counter-reset: cd-passo;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.cd-passos li {
+  counter-increment: cd-passo;
+  position: relative;
+  padding-left: 3em;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.cd-passos li strong { display: block; color: var(--ink); margin-bottom: 0.15em; font-family: var(--font-display); font-size: 1.1rem; }
+.cd-passos li::before {
+  content: counter(cd-passo);
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  width: 2.1em;
+  height: 2.1em;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--gold-dim));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(122, 33, 66, 0.3);
+}
+
+/* ---------- Cuidado por tipo de peça ---------- */
+.cd-tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.cd-tipo-card {
+  border: 1px solid var(--bone-2);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  text-align: left;
+}
+.cd-tipo-card .cd-icone { font-size: 1.5rem; display: block; margin-bottom: 0.3em; }
+.cd-tipo-card h3 { font-size: 1.05rem; color: var(--ink); margin: 0 0 0.3em; }
+.cd-tipo-card p { color: var(--muted); font-size: 0.9rem; margin: 0 !important; line-height: 1.5; }
+
+/* ---------- O que evitar ---------- */
+.cd-evitar {
+  background: var(--bone-2);
+  border: 1px solid var(--velvet-3);
+  border-radius: var(--radius-m);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.cd-evitar ul { margin: 0 !important; padding: 0 !important; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.7em; }
+.cd-evitar li { display: flex; gap: 0.6em; align-items: flex-start; color: var(--ink); font-size: 0.95rem; line-height: 1.5; }
+.cd-evitar li .x {
+  flex-shrink: 0;
+  width: 1.5em; height: 1.5em;
+  border-radius: 50%;
+  background: var(--rose);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
