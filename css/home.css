@@ -191,4 +191,4 @@
 .regioes-lista a:hover,
 .regioes-lista a:focus-visible { background: var(--gold-dim); color: var(--page-bg); }
 .regioes-mais { margin-top: var(--space-3); }
-.regioes-mais a { color: var(--gold-dim); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.regioes-mais a { color: var(--gold-dim); font-weight: 600; text-decoration: none; }
