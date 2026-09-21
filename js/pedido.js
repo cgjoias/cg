@@ -1,3 +1,116 @@
+// ---------- Frete (CEP -> endereço automático -> cálculo via Melhor Envio) ----------
+let freteEscolhido = null; // { servico, valor, prazo } ou null
+
+function formatarCep(valor) {
+  const d = String(valor || "").replace(/\D/g, "").slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+async function buscarEnderecoPorCep(cepLimpo) {
+  const campoEndereco = document.getElementById("endereco");
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    const dados = await resp.json();
+    if (dados.erro) return;
+    if (campoEndereco && !campoEndereco.value.trim()) {
+      campoEndereco.value = [dados.logradouro, dados.bairro, dados.localidade && `${dados.localidade}/${dados.uf}`].filter(Boolean).join(", ");
+    }
+  } catch (e) {
+    console.warn("Não foi possível buscar o endereço pelo CEP:", e);
+  }
+}
+
+function renderizarOpcoesFrete(opcoes) {
+  const wrap = document.getElementById("frete-opcoes-wrap");
+  const lista = document.getElementById("frete-opcoes");
+  const status = document.getElementById("frete-status");
+  if (!wrap || !lista) return;
+
+  lista.innerHTML = "";
+  freteEscolhido = null;
+  document.dispatchEvent(new CustomEvent("frete:mudou"));
+
+  if (!opcoes || !opcoes.length) {
+    wrap.hidden = false;
+    status.hidden = false;
+    status.textContent = "Nenhuma opção de frete encontrada para esse CEP.";
+    return;
+  }
+
+  status.hidden = true;
+  opcoes.forEach((op, i) => {
+    const id = `frete-op-${i}`;
+    const label = document.createElement("label");
+    label.className = "chip-frete";
+    label.style.display = "block";
+    label.innerHTML = `<input type="radio" name="frete-opcao" id="${id}" value="${i}"> ${op.servico} — R$ ${op.valor.toFixed(2).replace(".", ",")} — ${op.prazo} dia(s) útil(eis)`;
+    lista.appendChild(label);
+    label.querySelector("input").addEventListener("change", () => {
+      freteEscolhido = op;
+      document.dispatchEvent(new CustomEvent("frete:mudou"));
+    });
+  });
+  wrap.hidden = false;
+}
+
+async function calcularFrete() {
+  const campoCep = document.getElementById("cep");
+  const botao = document.getElementById("btn-calcular-frete");
+  const status = document.getElementById("frete-status");
+  const wrap = document.getElementById("frete-opcoes-wrap");
+  if (!campoCep) return;
+
+  const cepLimpo = campoCep.value.replace(/\D/g, "");
+  if (cepLimpo.length !== 8) {
+    wrap.hidden = false;
+    status.hidden = false;
+    status.textContent = "Digite um CEP válido (8 dígitos).";
+    return;
+  }
+
+  await buscarEnderecoPorCep(cepLimpo);
+
+  botao.disabled = true;
+  const textoOriginal = botao.textContent;
+  botao.textContent = "Calculando...";
+  wrap.hidden = false;
+  status.hidden = false;
+  status.textContent = "Calculando o frete...";
+  document.getElementById("frete-opcoes").innerHTML = "";
+
+  try {
+    const { data, error } = await db.functions.invoke("calcular-frete", { body: { cepDestino: cepLimpo } });
+    if (error || data?.erro) throw new Error(data?.erro || error?.message || "Erro ao calcular frete");
+    renderizarOpcoesFrete(data.opcoes);
+  } catch (e) {
+    console.error(e);
+    status.hidden = false;
+    status.textContent = "Não foi possível calcular o frete agora. Você pode combinar pelo WhatsApp depois de enviar o pedido.";
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
+function ligarCampoFrete() {
+  const campoCep = document.getElementById("cep");
+  const botao = document.getElementById("btn-calcular-frete");
+  if (!campoCep || !botao) return;
+  campoCep.addEventListener("input", () => { campoCep.value = formatarCep(campoCep.value); });
+  botao.addEventListener("click", calcularFrete);
+}
+
+function dadosFreteParaPedido() {
+  if (!freteEscolhido) return { cep: null, frete_servico: null, frete_valor: null, frete_prazo: null };
+  const campoCep = document.getElementById("cep");
+  return {
+    cep: campoCep ? campoCep.value.replace(/\D/g, "") : null,
+    frete_servico: freteEscolhido.servico,
+    frete_valor: freteEscolhido.valor,
+    frete_prazo: freteEscolhido.prazo,
+  };
+}
+
 async function carregarProdutos() {
   return window.carregarProdutosSite();
 }
@@ -314,10 +427,13 @@ function iniciarModoSacola(form, erroBox) {
       li.append(img, texto);
       lista.appendChild(li);
     });
-    totalEl.textContent = formatoPrecoPedido(window.Sacola.total());
+    const frete = freteEscolhido ? freteEscolhido.valor : 0;
+    totalEl.textContent = formatoPrecoPedido(window.Sacola.total() + frete);
   }
   renderizar();
   document.addEventListener("sacola:mudou", renderizar);
+  document.addEventListener("frete:mudou", renderizar);
+  ligarCampoFrete();
   document.getElementById("pedido-sacola-editar").addEventListener("click", () => window.Sacola.abrir());
 
   form.addEventListener("submit", async (evento) => {
@@ -340,13 +456,18 @@ function iniciarModoSacola(form, erroBox) {
       observacoes: (dados.get("observacoes") || "").trim() || null,
       status: "Pendente",
     };
-    const linhas = itens.map((item) => ({
+    const freteDados = dadosFreteParaPedido();
+    const linhas = itens.map((item, i) => ({
       ...comuns,
       produto_id: item.id,
       produto_nome: item.nome,
       categoria: item.categoria || "",
       preco: item.preco,
       detalhes: [item.opcao ? `Tipo: ${item.opcao}` : "", (item.detalhes || "").trim()].filter(Boolean).join(" · ") || null,
+      cep: freteDados.cep,
+      frete_servico: i === 0 ? freteDados.frete_servico : null,
+      frete_valor: i === 0 ? freteDados.frete_valor : null,
+      frete_prazo: i === 0 ? freteDados.frete_prazo : null,
     }));
 
     const botao = form.querySelector('button[type="submit"]');
@@ -430,6 +551,8 @@ async function iniciarFormularioPedido() {
     return;
   }
 
+  ligarCampoFrete();
+
   const produtos = await carregarProdutos();
 
   preencherSelectProdutos(selectProduto, produtos, params.get("produto"));
@@ -465,6 +588,7 @@ async function iniciarFormularioPedido() {
       detalhes: [rotuloEscolhido(produtoEscolhido) ? `Tipo: ${rotuloEscolhido(produtoEscolhido)}` : "", (dados.get("detalhes") || "").trim()].filter(Boolean).join(" · ") || null,
       observacoes: (dados.get("observacoes") || "").trim() || null,
       status: "Pendente",
+      ...dadosFreteParaPedido(),
     };
 
     const botao = form.querySelector('button[type="submit"]');
