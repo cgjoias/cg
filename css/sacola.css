@@ -89,7 +89,7 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.25s ease, visibility 0.25s;
-  z-index: 110;
+  z-index: 400;
 }
 .sacola-overlay.aberto { opacity: 1; visibility: visible; }
 
@@ -108,20 +108,33 @@
   transform: translateX(105%);
   visibility: hidden;
   transition: transform 0.28s ease, visibility 0.28s;
-  z-index: 120;
+  z-index: 410;
 }
 .sacola-painel.aberto { transform: translateX(0); visibility: visible; }
 body.sacola-aberta { overflow: hidden; }
 
 /* Enquanto a sacola está aberta, nenhum botão externo pode ficar visível
    por baixo do fundo escurecido (nav, WhatsApp flutuante, voltar ao topo,
-   botões de fechar/tema da página de pedido, menu mobile). */
+   botões de fechar/tema da página de pedido, botões do painel de detalhes
+   do catálogo, menu mobile).
+   IMPORTANTE: "visibility" é herdada, mas um filho que declara
+   "visibility: visible" por conta própria continua aparecendo mesmo com o pai
+   escondido. Por isso os filhos (.pedido-acoes *, .nav *) também entram na
+   regra, e os botões soltos do catálogo são listados um a um. */
 body.sacola-aberta .nav,
+body.sacola-aberta .nav *,
+body.sacola-aberta .nav .theme-toggle,
 body.sacola-aberta .whatsapp-float,
 body.sacola-aberta .fab-topo,
 body.sacola-aberta .pedido-acoes,
-body.sacola-aberta .nav-toggle {
+body.sacola-aberta .pedido-acoes *,
+body.sacola-aberta .nav-toggle,
+body.sacola-aberta .lightbox-acoes,
+body.sacola-aberta .lightbox-acoes *,
+body.sacola-aberta .lightbox-fechar,
+body.sacola-aberta .ampliar-foto {
   visibility: hidden !important;
+  pointer-events: none !important;
 }
 /* O próprio botão da sacola (fab-sacola) também some — quem fecha é o ✕
    do painel, o clique fora (overlay) ou a tecla Esc. */
@@ -230,7 +243,7 @@ body.sacola-aberta .fab-sacola { visibility: hidden !important; }
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-  z-index: 130;
+  z-index: 420;
   pointer-events: none;
 }
 .sacola-toast.visivel { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
