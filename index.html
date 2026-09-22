@@ -148,6 +148,156 @@
 </head>
 <body>
 
+<style>
+#cg-weather-bar{position:relative;z-index:500;display:flex;align-items:center;height:40px;background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.08);font-family:Arial,Helvetica,sans-serif;overflow:hidden;}
+#cg-weather-bar .cwb-track-wrap{flex:1 1 auto;overflow-x:auto;overflow-y:hidden;position:relative;min-width:0;height:100%;display:flex;align-items:center;cursor:grab;-webkit-overflow-scrolling:touch;touch-action:pan-x;scrollbar-width:none;-ms-overflow-style:none;}
+#cg-weather-bar .cwb-track-wrap::-webkit-scrollbar{display:none;}
+#cg-weather-bar .cwb-track-wrap.dragging{cursor:grabbing;}
+#cg-weather-bar .cwb-track{display:flex;align-items:center;height:40px;white-space:nowrap;width:max-content;}
+#cg-weather-bar .cwb-item{display:inline-flex;align-items:center;gap:6px;padding:0 20px;font-size:0.72rem;color:#e5e7eb;}
+#cg-weather-bar .cwb-city{font-weight:800;color:#ffffff;}
+#cg-weather-bar .cwb-uf{color:#d4af37;font-weight:700;font-size:0.66rem;}
+#cg-weather-bar .cwb-temp{font-weight:800;color:#fb923c;font-size:0.8rem;}
+#cg-weather-bar .cwb-max{color:#f87171;font-weight:700;}
+#cg-weather-bar .cwb-min{color:#38bdf8;font-weight:700;}
+#cg-weather-bar .cwb-desc{color:#9ca3af;}
+#cg-weather-bar .cwb-meta{color:#9ca3af;display:inline-flex;align-items:center;gap:3px;}
+#cg-weather-bar .cwb-sep{color:#374151;}
+@media (max-width:640px){
+  #cg-weather-bar{height:36px;}
+  #cg-weather-bar .cwb-track{height:36px;}
+  #cg-weather-bar .cwb-item{padding:0 13px;font-size:0.64rem;}
+  #cg-weather-bar .cwb-temp{font-size:0.7rem;}
+}
+</style>
+<div id="cg-weather-bar" role="complementary" aria-label="Previsão do tempo em Belém, Ananindeua, Castanhal e região metropolitana">
+  <div class="cwb-track-wrap" id="cwb-track-wrap">
+    <div class="cwb-track" id="cwb-track">
+      <span class="cwb-item">Carregando previsão…</span>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var CITIES = [
+    {name:"Belém", uf:"PA", lat:-1.4558, lon:-48.4902},
+    {name:"Ananindeua", uf:"PA", lat:-1.3656, lon:-48.3722},
+    {name:"Castanhal", uf:"PA", lat:-1.2937, lon:-47.9214},
+    {name:"Marituba", uf:"PA", lat:-1.3550, lon:-48.3419},
+    {name:"Benevides", uf:"PA", lat:-1.3614, lon:-48.2453},
+    {name:"Santa Izabel do Pará", uf:"PA", lat:-1.2975, lon:-48.1656}
+  ];
+
+  function descFromCode(code){
+    var map = {
+      0:"Céu limpo",1:"Poucas nuvens",2:"Parcialmente nublado",3:"Nublado",
+      45:"Neblina",48:"Neblina",
+      51:"Garoa fraca",53:"Garoa",55:"Garoa forte",
+      61:"Chuva fraca",63:"Chuva",65:"Chuva forte",
+      66:"Chuva gelada",67:"Chuva gelada forte",
+      71:"Neve fraca",73:"Neve",75:"Neve forte",77:"Neve",
+      80:"Pancadas fracas",81:"Pancadas de chuva",82:"Pancadas fortes",
+      85:"Pancadas de neve",86:"Pancadas de neve",
+      95:"Trovoada",96:"Trovoada c/ granizo",99:"Trovoada c/ granizo"
+    };
+    return map[code] || "Tempo variável";
+  }
+
+  function buildItem(c, data){
+    if(!data || !data.current){
+      return '<span class="cwb-item"><span class="cwb-city">'+c.name+'</span> <span class="cwb-uf">/'+c.uf+'</span> <span class="cwb-desc">indisponível</span></span><span class="cwb-sep">•</span>';
+    }
+    var cur = data.current;
+    var daily = data.daily || {};
+    var max = daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[0]) : Math.round(cur.temperature_2m);
+    var min = daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[0]) : Math.round(cur.temperature_2m);
+    var temp = Math.round(cur.temperature_2m);
+    var wind = Math.round(cur.wind_speed_10m);
+    var hum = Math.round(cur.relative_humidity_2m);
+    var desc = descFromCode(cur.weather_code);
+    return '<span class="cwb-item">'
+      + '<span class="cwb-city">'+c.name+'</span> <span class="cwb-uf">/'+c.uf+'</span>'
+      + ' <span class="cwb-temp">'+temp+'°C</span>'
+      + ' <span class="cwb-max">↑'+max+'°</span> / <span class="cwb-min">↓'+min+'°</span>'
+      + ' <span class="cwb-desc">'+desc+'</span>'
+      + ' <span class="cwb-meta">💨 '+wind+' km/h</span>'
+      + ' <span class="cwb-meta">💧 '+hum+'%</span>'
+      + '</span><span class="cwb-sep">•</span>';
+  }
+
+  async function loadCgWeather(){
+    var track = document.getElementById('cwb-track');
+    if(!track) return;
+    try{
+      var results = await Promise.all(CITIES.map(function(c){
+        var url = "https://api.open-meteo.com/v1/forecast?latitude="+c.lat+"&longitude="+c.lon
+          + "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code"
+          + "&daily=temperature_2m_max,temperature_2m_min&timezone=America%2FBelem";
+        return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return null; });
+      }));
+      var html = "";
+      CITIES.forEach(function(c, i){ html += buildItem(c, results[i]); });
+      track.innerHTML = html + html;
+    }catch(e){
+      track.innerHTML = '<span class="cwb-item cwb-desc">Previsão indisponível no momento</span>';
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', loadCgWeather);
+  } else {
+    loadCgWeather();
+  }
+
+  var wrap = document.getElementById('cwb-track-wrap');
+  if(wrap){
+    var isDown = false, startX = 0, startScroll = 0;
+    var autoPaused = false;
+    var resumeTimer = null;
+
+    wrap.addEventListener('mousedown', function(e){
+      isDown = true;
+      autoPaused = true;
+      wrap.classList.add('dragging');
+      startX = e.pageX;
+      startScroll = wrap.scrollLeft;
+    });
+    window.addEventListener('mouseup', function(){
+      if(!isDown) return;
+      isDown = false;
+      wrap.classList.remove('dragging');
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(function(){ autoPaused = false; }, 1200);
+    });
+    window.addEventListener('mousemove', function(e){
+      if(!isDown) return;
+      e.preventDefault();
+      var walk = e.pageX - startX;
+      wrap.scrollLeft = startScroll - walk;
+    });
+
+    wrap.addEventListener('touchstart', function(){
+      autoPaused = true;
+      clearTimeout(resumeTimer);
+    }, {passive:true});
+    wrap.addEventListener('touchend', function(){
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(function(){ autoPaused = false; }, 1200);
+    }, {passive:true});
+
+    setInterval(function(){
+      if(autoPaused) return;
+      if(wrap.scrollWidth <= wrap.clientWidth) return;
+      wrap.scrollLeft += 1;
+      var half = wrap.scrollWidth / 2;
+      if(wrap.scrollLeft >= half){
+        wrap.scrollLeft = 0;
+      }
+    }, 70);
+  }
+})();
+</script>
+
   <nav class="nav">
     <div class="wrap">
       <a href="index.html" class="brand"><img src="assets/img/marca/logo.jpg" alt="CG Acessórios" class="brand-logo"> CG Acessórios</a>
