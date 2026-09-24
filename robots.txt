@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /gestao.html
 Disallow: /resumo.html
+Disallow: /css/
 
 Sitemap: https://cgjoias.github.io/cg/sitemap.xml
